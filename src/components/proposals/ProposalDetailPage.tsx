@@ -40,6 +40,7 @@ import {
 
 import {
   AdapterComponent,
+  derivePhaseFromConditions,
   ExecutionStepStatus,
   getPhaseDisplay,
   getRiskColor,
@@ -47,6 +48,7 @@ import {
   LightspeedProposalModel,
   PermissionRule,
   PreviousAttempt,
+  ProposalCondition,
   RemediationOption,
   SandboxInfo,
 } from '../../models/proposal';
@@ -151,12 +153,11 @@ const useApprovalActions = (proposal?: LightspeedProposal) => {
           message: approved
             ? 'Proposal approved by user via console'
             : 'Proposal denied by user via console',
-          reason: approved ? 'ApprovedViaConsole' : 'DeniedViaConsole',
+          reason: approved ? 'UserApproved' : 'UserDenied',
           status: approved ? 'True' : 'False',
           type: 'Approved',
         };
         const statusPatches: Array<{ op: string; path: string; value: unknown }> = [
-          { op: 'replace', path: '/status/phase', value: approved ? 'Approved' : 'Denied' },
           proposal.status?.conditions?.length
             ? { op: 'add', path: '/status/conditions/-', value: conditionValue }
             : { op: 'add', path: '/status/conditions', value: [conditionValue] },
@@ -255,9 +256,8 @@ const PreviousAttemptsSection: React.FC<{ attempts: PreviousAttempt[] }> = ({ at
 
 const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
-  const phase = getPhaseDisplay(proposal.status?.phase);
+  const phase = getPhaseDisplay(derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]));
   const attempts = proposal.status?.previousAttempts;
-  const templateName = proposal.spec.templateRef?.name ?? '(inline)';
   const sourceUrl = proposal.metadata.annotations?.['ols.openshift.io/source-url'];
   const sourceName = proposal.metadata.annotations?.['ols.openshift.io/source-name'] || t('Source');
 
@@ -276,18 +276,16 @@ const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) =
                     spaceItems={{ default: 'spaceItemsSm' }}
                   >
                     <FlexItem>
-                      <PhaseIcon phase={proposal.status?.phase} executionFailed={proposal.status?.steps?.execution?.success === false} verificationFailed={proposal.status?.steps?.verification?.success === false} />
+                      <PhaseIcon
+                        phase={derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[])}
+                        executionFailed={proposal.status?.steps?.execution?.success === false}
+                        verificationFailed={proposal.status?.steps?.verification?.success === false}
+                      />
                     </FlexItem>
                     <FlexItem>
                       <Label color={phase.color}>{phase.label}</Label>
                     </FlexItem>
                   </Flex>
-                </DescriptionListDescription>
-              </DescriptionListGroup>
-              <DescriptionListGroup>
-                <DescriptionListTerm>{t('Template')}</DescriptionListTerm>
-                <DescriptionListDescription>
-                  <Label color="blue">{templateName}</Label>
                 </DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
@@ -335,11 +333,11 @@ const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) =
                   </DescriptionListDescription>
                 </DescriptionListGroup>
               )}
-              {(proposal.status?.attempt ?? 0) > 1 && (
+              {(proposal.status?.attempts ?? 0) > 1 && (
                 <DescriptionListGroup>
                   <DescriptionListTerm>{t('Attempt')}</DescriptionListTerm>
                   <DescriptionListDescription>
-                    {proposal.status?.attempt}
+                    {proposal.status?.attempts}
                   </DescriptionListDescription>
                 </DescriptionListGroup>
               )}
@@ -694,25 +692,25 @@ const RemediationOptionCard: React.FC<{ option: RemediationOption }> = ({ option
                   </Stack>
                 </StackItem>
                 {verification.rollbackPlan && (
-                <StackItem>
-                  <Title headingLevel="h4">{t('Rollback Plan')}</Title>
-                  {typeof verification.rollbackPlan === 'object' ? (
-                    <Stack hasGutter>
-                      <StackItem>
-                        <MarkdownText content={verification.rollbackPlan.description} />
-                      </StackItem>
-                      <StackItem>
-                        <CodeBlock>
-                          <CodeBlockCode>{verification.rollbackPlan.command}</CodeBlockCode>
-                        </CodeBlock>
-                      </StackItem>
-                    </Stack>
-                  ) : (
-                    <CodeBlock>
-                      <CodeBlockCode>{verification.rollbackPlan}</CodeBlockCode>
-                    </CodeBlock>
-                  )}
-                </StackItem>
+                  <StackItem>
+                    <Title headingLevel="h4">{t('Rollback Plan')}</Title>
+                    {typeof verification.rollbackPlan === 'object' ? (
+                      <Stack hasGutter>
+                        <StackItem>
+                          <MarkdownText content={verification.rollbackPlan.description} />
+                        </StackItem>
+                        <StackItem>
+                          <CodeBlock>
+                            <CodeBlockCode>{verification.rollbackPlan.command}</CodeBlockCode>
+                          </CodeBlock>
+                        </StackItem>
+                      </Stack>
+                    ) : (
+                      <CodeBlock>
+                        <CodeBlockCode>{verification.rollbackPlan}</CodeBlockCode>
+                      </CodeBlock>
+                    )}
+                  </StackItem>
                 )}
               </Stack>
             </CardBody>
@@ -880,16 +878,20 @@ const StructuredResult: React.FC<{ data: ExecutionStepStatus }> = ({ data }) => 
             <CardTitle>
               <Flex alignItems={{ default: 'alignItemsCenter' }}>
                 <FlexItem>
-                  {data.verification.conditionImproved ? (
+                  {data.verification.conditionOutcome === 'Improved' ? (
                     <CheckCircleIcon color="var(--pf-t--color--green--default)" />
-                  ) : (
+                  ) : data.verification.conditionOutcome === 'Degraded' ? (
                     <ExclamationCircleIcon color="var(--pf-t--color--red--default)" />
+                  ) : (
+                    <ExclamationCircleIcon color="var(--pf-t--color--yellow--default)" />
                   )}
                 </FlexItem>
                 <FlexItem>
-                  {data.verification.conditionImproved
+                  {data.verification.conditionOutcome === 'Improved'
                     ? t('Condition Improved')
-                    : t('Condition Not Improved')}
+                    : data.verification.conditionOutcome === 'Degraded'
+                      ? t('Condition Degraded')
+                      : t('Condition Unchanged')}
                 </FlexItem>
               </Flex>
             </CardTitle>
@@ -917,7 +919,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
   const analysis = proposal.status?.steps?.analysis;
   const options = analysis?.options ?? [];
   const hasAnalysis = options.length > 0;
-  const phase = proposal.status?.phase;
+  const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const showApproval = phase === 'Proposed';
   const [confirmRetries, setConfirmRetries] = React.useState<number | null>(null);
   const [retryDropdownOpen, setRetryDropdownOpen] = React.useState(false);
@@ -945,7 +947,8 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
   // Auto-collapse the log viewer once analysis data arrives
   const [logsExpanded, setLogsExpanded] = useAutoCollapseLogs(hasAnalysis);
 
-  const isAdvisory = proposal.status?.phase === 'AwaitingSync' || (!proposal.status?.steps?.execution);
+  const isAdvisory =
+    derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]) === 'AwaitingSync' || !proposal.status?.steps?.execution;
 
   if (!hasAnalysis) {
     // Show live sandbox logs while analyzing
@@ -1111,7 +1114,7 @@ const ResultTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => 
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const execution = proposal.status?.steps?.execution;
   const hasResult = !!(execution?.actionsTaken || execution?.success !== undefined);
-  const phase = proposal.status?.phase;
+  const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const sandboxPod = execution?.sandbox?.claimName;
   const sandboxNs = execution?.sandbox?.namespace || 'openshift-lightspeed';
   const isExecuting = phase === 'Approved' || phase === 'Executing';
@@ -1166,7 +1169,7 @@ const VerificationTab: React.FC<{ proposal: LightspeedProposal; onEscalate?: () 
   onEscalate,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
-  const phase = proposal.status?.phase;
+  const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const verification = proposal.status?.steps?.verification;
   const hasResult = !!(
     verification?.checks ||
@@ -1256,7 +1259,10 @@ const VerificationTab: React.FC<{ proposal: LightspeedProposal; onEscalate?: () 
                                       <strong>{check.name}</strong>
                                     </FlexItem>
                                     <FlexItem>
-                                      <Label color={check.result === 'Passed' ? 'green' : 'red'} isCompact>
+                                      <Label
+                                        color={check.result === 'Passed' ? 'green' : 'red'}
+                                        isCompact
+                                      >
                                         {check.result === 'Passed' ? t('Pass') : t('Fail')}
                                       </Label>
                                     </FlexItem>
@@ -1363,10 +1369,10 @@ const ProposalDetailPage: React.FC = () => {
     watchConfig,
   );
 
-  // Determine which tab has an active agent working in it.
+  const currentPhase = derivePhaseFromConditions(proposal?.status?.conditions as ProposalCondition[]);
+
   const activePhaseTab: TabKey | null = React.useMemo(() => {
-    const phase = proposal?.status?.phase;
-    switch (phase) {
+    switch (currentPhase) {
       case 'Pending':
       case 'Analyzing':
         return 'proposal';
@@ -1379,7 +1385,7 @@ const ProposalDetailPage: React.FC = () => {
       default:
         return null;
     }
-  }, [proposal?.status?.phase]);
+  }, [currentPhase]);
 
   const {
     approve,
@@ -1391,18 +1397,24 @@ const ProposalDetailPage: React.FC = () => {
   const [escalateOpen, setEscalateOpen] = React.useState(false);
   const handleVerifyNow = React.useCallback(async () => {
     try {
+      const now = new Date().toISOString();
+      const updatedConditions = (proposal?.status?.conditions || []).map((c) =>
+        c.type === 'AwaitingSync'
+          ? { ...c, status: 'False', reason: 'SyncConfirmed', message: 'User confirmed sync via console', lastTransitionTime: now }
+          : c,
+      );
       const url = `/api/kubernetes/apis/${LightspeedProposalModel.apiGroup}/${LightspeedProposalModel.apiVersion}/namespaces/${ns}/lightspeedproposals/${name}/status`;
       await consoleFetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/merge-patch+json' },
         body: JSON.stringify({
-          status: { phase: 'Verifying' },
+          status: { conditions: updatedConditions },
         }),
       });
     } catch (e) {
       console.error('Failed to trigger verification:', e);
     }
-  }, [ns, name]);
+  }, [ns, name, proposal]);
 
   if (!loaded) {
     return (
@@ -1422,8 +1434,8 @@ const ProposalDetailPage: React.FC = () => {
     );
   }
 
-  const phase = getPhaseDisplay(proposal.status?.phase);
-  const attempt = proposal.status?.attempt ?? 0;
+  const phase = getPhaseDisplay(currentPhase);
+  const attempt = proposal.status?.attempts ?? 0;
 
   const isCmoSource =
     proposal.metadata?.labels?.['ols.openshift.io/source'] === 'cluster-monitoring-operator';
@@ -1438,7 +1450,7 @@ const ProposalDetailPage: React.FC = () => {
     const sandboxPod = analysis?.sandbox?.claimName;
     const sandboxNs = analysis?.sandbox?.namespace || 'openshift-lightspeed';
     const isAnalyzing =
-      proposal.status?.phase === 'Analyzing' || proposal.status?.phase === 'Pending';
+      currentPhase === 'Analyzing' || currentPhase === 'Pending';
     const hasOptions = options.length > 0;
 
     return (
@@ -1454,7 +1466,11 @@ const ProposalDetailPage: React.FC = () => {
               spaceItems={{ default: 'spaceItemsSm' }}
             >
               <FlexItem>
-                <PhaseIcon phase={proposal.status?.phase} executionFailed={proposal.status?.steps?.execution?.success === false} verificationFailed={proposal.status?.steps?.verification?.success === false} />
+                <PhaseIcon
+                  phase={currentPhase}
+                  executionFailed={proposal.status?.steps?.execution?.success === false}
+                  verificationFailed={proposal.status?.steps?.verification?.success === false}
+                />
               </FlexItem>
               <FlexItem>
                 <Title headingLevel="h1">{triggerName}</Title>
@@ -1513,15 +1529,16 @@ const ProposalDetailPage: React.FC = () => {
             spaceItems={{ default: 'spaceItemsSm' }}
           >
             <FlexItem>
-              <PhaseIcon phase={proposal.status?.phase} executionFailed={proposal.status?.steps?.execution?.success === false} verificationFailed={proposal.status?.steps?.verification?.success === false} />
+              <PhaseIcon
+                phase={currentPhase}
+                executionFailed={proposal.status?.steps?.execution?.success === false}
+                verificationFailed={proposal.status?.steps?.verification?.success === false}
+              />
             </FlexItem>
             <FlexItem>
               <Title headingLevel="h1">{proposal.metadata.name}</Title>
             </FlexItem>
           </Flex>
-        </FlexItem>
-        <FlexItem>
-          <Label color="blue">{proposal.spec.templateRef?.name ?? '(inline)'}</Label>
         </FlexItem>
         <FlexItem>
           <Label color={phase.color}>{phase.label}</Label>
@@ -1587,7 +1604,7 @@ const ProposalDetailPage: React.FC = () => {
         )}
         {effectiveTab === 'result' && (
           <>
-            {proposal.status?.phase === 'AwaitingSync' && (
+            {currentPhase === 'AwaitingSync' && (
               <Alert
                 isInline
                 style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}

@@ -33,7 +33,6 @@ export type ProposalPhase =
   | 'Executing'
   | 'AwaitingSync'
   | 'Verifying'
-  | 'Validating'
   | 'Completed'
   | 'Failed'
   | 'Escalated';
@@ -176,7 +175,7 @@ export type ExecutionActionTaken = {
 };
 
 export type ExecutionVerification = {
-  conditionImproved: boolean;
+  conditionOutcome: 'Improved' | 'Unchanged' | 'Degraded';
   summary: string;
 };
 
@@ -206,8 +205,7 @@ export type VerificationStepStatus = {
 };
 
 export type ProposalStatus = {
-  phase?: ProposalPhase;
-  attempt?: number;
+  attempts?: number;
   steps?: StepsStatus;
   conditions?: ProposalCondition[];
   previousAttempts?: PreviousAttempt[];
@@ -234,7 +232,6 @@ export type LightspeedProposal = {
   };
   spec: {
     request: string;
-    templateRef?: { name: string };
     targetNamespaces?: string[];
     tools?: ToolsSpec;
     analysis?: ProposalStep;
@@ -280,6 +277,55 @@ export const getPhaseDisplay = (phase?: ProposalPhase | string): PhaseDisplay =>
     default:
       return { color: 'grey', label: phase || 'Unknown' };
   }
+};
+
+export const derivePhaseFromConditions = (
+  conditions?: ProposalCondition[],
+): ProposalPhase => {
+  if (!conditions?.length) return 'Pending';
+
+  const get = (type: string) => conditions.find((c) => c.type === type);
+
+  const escalated = get('Escalated');
+  if (escalated?.status === 'True') return 'Escalated';
+
+  const approved = get('Approved');
+  if (approved?.status === 'False') return 'Denied';
+
+  const verified = get('Verified');
+  if (verified) {
+    if (verified.status === 'True') return 'Completed';
+    if (verified.status === 'Unknown') return 'Verifying';
+    switch (verified.reason) {
+      case 'RetryingExecution':
+        return 'Approved';
+      case 'RetriesExhausted':
+        return 'Proposed';
+      default:
+        return 'Failed';
+    }
+  }
+
+  const awaitingSync = get('AwaitingSync');
+  if (awaitingSync?.status === 'True') return 'AwaitingSync';
+
+  const executed = get('Executed');
+  if (executed) {
+    if (executed.status === 'True') return 'Verifying';
+    if (executed.status === 'Unknown') return 'Executing';
+    return 'Failed';
+  }
+
+  if (approved?.status === 'True') return 'Approved';
+
+  const analyzed = get('Analyzed');
+  if (analyzed) {
+    if (analyzed.status === 'True') return 'Proposed';
+    if (analyzed.status === 'Unknown') return 'Analyzing';
+    return 'Failed';
+  }
+
+  return 'Pending';
 };
 
 export const getRiskColor = (risk?: string): 'green' | 'orange' | 'red' | 'grey' => {

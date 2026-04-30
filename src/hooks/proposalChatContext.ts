@@ -1,4 +1,5 @@
-import type { LightspeedProposal } from '../models/proposal';
+import { derivePhaseFromConditions } from '../models/proposal';
+import type { LightspeedProposal, ProposalCondition } from '../models/proposal';
 import type { ChatConfig } from './useChat';
 
 export function buildProposalChatConfig(proposal: LightspeedProposal): ChatConfig {
@@ -6,7 +7,6 @@ export function buildProposalChatConfig(proposal: LightspeedProposal): ChatConfi
     remediation: {
       name: proposal.metadata.name,
       namespace: proposal.metadata.namespace,
-      template: proposal.spec.templateRef?.name,
       request: proposal.spec.request,
     },
   };
@@ -25,20 +25,21 @@ export function buildProposalChatConfig(proposal: LightspeedProposal): ChatConfi
       success: execution.success,
       actionsTaken: execution.actionsTaken,
       verification: execution.verification,
-      verificationPassed: proposal.status?.phase === 'Completed',
+      verificationPassed: derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]) === 'Completed',
     };
   }
 
-  if (proposal.status?.phase) {
-    context.phase = proposal.status.phase;
+  const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
+  if (phase) {
+    context.phase = phase;
   }
 
   if (proposal.status?.previousAttempts?.length) {
     context.previousAttempts = proposal.status.previousAttempts;
   }
 
-  if (proposal.status?.attempt !== undefined) {
-    context.attempt = proposal.status.attempt;
+  if (proposal.status?.attempts !== undefined) {
+    context.attempts = proposal.status.attempts;
   }
 
   if (proposal.status?.conditions?.length) {

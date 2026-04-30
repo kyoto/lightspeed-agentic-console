@@ -20,18 +20,18 @@ import { EmptyState, EmptyStateBody, Label } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import {
+  derivePhaseFromConditions,
   getPhaseDisplay,
   LightspeedProposal,
   LightspeedProposalGVK,
-  ProposalPhase,
+  ProposalCondition,
 } from '../../models/proposal';
 
 type ProposalResource = LightspeedProposal & K8sResourceCommon;
 
 const columns: TableColumn<ProposalResource>[] = [
   { id: 'name', sort: 'metadata.name', title: 'Name' },
-  { id: 'template', sort: 'spec.templateRef.name', title: 'Template' },
-  { id: 'phase', sort: 'status.phase', title: 'Phase' },
+  { id: 'phase', title: 'Phase' },
   { id: 'request', title: 'Request' },
   { id: 'namespace', sort: 'metadata.namespace', title: 'Namespace' },
   { id: 'age', sort: 'metadata.creationTimestamp', title: 'Age' },
@@ -41,7 +41,7 @@ const filters: RowFilter<ProposalResource>[] = [
   {
     filter: (filterValue, obj) => {
       const selected = filterValue?.selected || [];
-      const phase = obj?.status?.phase || 'Pending';
+      const phase = derivePhaseFromConditions(obj?.status?.conditions as ProposalCondition[]);
       return !selected.length || selected.includes(phase);
     },
     filterGroupName: 'Phase',
@@ -49,21 +49,22 @@ const filters: RowFilter<ProposalResource>[] = [
       { id: 'Pending', title: 'Pending' },
       { id: 'Analyzing', title: 'Analyzing' },
       { id: 'Proposed', title: 'Proposed' },
+      { id: 'Approved', title: 'Approved' },
       { id: 'Executing', title: 'Executing' },
       { id: 'AwaitingSync', title: 'Awaiting Sync' },
-      { id: 'Validating', title: 'Validating' },
+      { id: 'Verifying', title: 'Verifying' },
       { id: 'Completed', title: 'Completed' },
       { id: 'Failed', title: 'Failed' },
       { id: 'Denied', title: 'Denied' },
       { id: 'Escalated', title: 'Escalated' },
     ],
-    reducer: (obj) => (obj.status?.phase as ProposalPhase) || 'Pending',
+    reducer: (obj) => derivePhaseFromConditions(obj?.status?.conditions as ProposalCondition[]),
     type: 'proposal-phase',
   },
 ];
 
 const ProposalRow: React.FC<RowProps<ProposalResource>> = ({ activeColumnIDs, obj }) => {
-  const phase = getPhaseDisplay(obj.status?.phase);
+  const phase = getPhaseDisplay(derivePhaseFromConditions(obj.status?.conditions as ProposalCondition[]));
   const detailPath = `/lightspeed/proposals/${obj.metadata.namespace}/${obj.metadata.name}`;
   const requestPreview =
     obj.spec.request.length > 80 ? `${obj.spec.request.substring(0, 80)}...` : obj.spec.request;
@@ -79,9 +80,6 @@ const ProposalRow: React.FC<RowProps<ProposalResource>> = ({ activeColumnIDs, ob
             namespace={obj.metadata.namespace}
           />
         </Link>
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="template">
-        <Label color="blue">{obj.spec.templateRef?.name ?? '(inline)'}</Label>
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="phase">
         <Label color={phase.color}>{phase.label}</Label>
