@@ -2,8 +2,6 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import {
-  consoleFetch,
-  k8sPatch,
   K8sResourceCommon,
   useK8sWatchResource,
 } from '@openshift-console/dynamic-plugin-sdk';
@@ -25,6 +23,7 @@ import {
   ExpandableSection,
   Flex,
   FlexItem,
+  MenuToggle,
   Label,
   PageSection,
   Stack,
@@ -44,7 +43,10 @@ import {
   ExecutionStepStatus,
   getPhaseDisplay,
   getRiskColor,
+  LightspeedAgentModel,
   LightspeedProposal,
+  LightspeedProposalApproval,
+  LightspeedProposalApprovalModel,
   LightspeedProposalModel,
   PermissionRule,
   PreviousAttempt,
@@ -52,11 +54,11 @@ import {
   RemediationOption,
   SandboxInfo,
 } from '../../models/proposal';
-import { MarkdownText } from './ChatMessage';
+import { type StageApprovalResult, useStageApproval } from '../../hooks/useStageApproval';
+import { MarkdownText } from './MarkdownText';
 import DynamicComponent from './DynamicComponent';
 import EscalateModal from './EscalateModal';
 import PhaseIcon from './PhaseIcon';
-import RefineChat from './RefineChat';
 import SandboxLogViewer from './SandboxLogViewer';
 
 import './proposal-detail.css';
@@ -68,9 +70,6 @@ const KNOWN_COMPONENT_TYPES = new Set([
   'lightspeed_action_picker',
   'lightspeed_evidence_table',
   'lightspeed_status_timeline',
-  'lightspeed_revised_proposal',
-  'lightspeed_revised_verification',
-  'lightspeed_revised_rbac',
   'cmo_alert_diagnosis',
   'cmo_metric_evidence',
   'cmo_remediation_step',
@@ -119,87 +118,116 @@ const CONFIRM_RESET_MS = 5000;
 const MAX_RETRIES = 20;
 const RETRY_OPTIONS = Array.from({ length: MAX_RETRIES }, (_, i) => i + 1);
 
-const useApprovalActions = (proposal?: LightspeedProposal) => {
-  const [inProgress, setInProgress] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+const AgentDropdown: React.FC<{
+  agentNames: string[];
+  defaultAgent?: string;
+  selected: string;
+  onSelect: (_name: string) => void;
+}> = ({ agentNames, defaultAgent, selected, onSelect }) => {
+  const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+  const [isOpen, setIsOpen] = React.useState(false);
+  let displayLabel: string;
+  if (!selected) {
+    displayLabel = t('Select agent');
+  } else if (selected === defaultAgent) {
+    displayLabel = `${selected} (${t('default')})`;
+  } else {
+    displayLabel = selected;
+  }
 
-  const handleApproval = React.useCallback(
-    async (approved: boolean, maxAttempts?: number, optionIndex?: number) => {
-      if (!proposal) {
-        return;
-      }
-      setInProgress(true);
-      setError(null);
-      try {
-        // Patch spec (maxAttempts) via the main resource endpoint
-        if (approved && maxAttempts !== undefined && maxAttempts > 0) {
-          await k8sPatch({
-            data: [
-              {
-                op: proposal.spec.maxAttempts === undefined ? 'add' : 'replace',
-                path: '/spec/maxAttempts',
-                value: maxAttempts,
-              },
-            ],
-            model: LightspeedProposalModel,
-            resource: proposal,
-          });
-        }
-
-        // Patch status via the status subresource
-        const now = new Date().toISOString();
-        const conditionValue = {
-          lastTransitionTime: now,
-          message: approved
-            ? 'Proposal approved by user via console'
-            : 'Proposal denied by user via console',
-          reason: approved ? 'UserApproved' : 'UserDenied',
-          status: approved ? 'True' : 'False',
-          type: 'Approved',
-        };
-        const statusPatches: Array<{ op: string; path: string; value: unknown }> = [
-          proposal.status?.conditions?.length
-            ? { op: 'add', path: '/status/conditions/-', value: conditionValue }
-            : { op: 'add', path: '/status/conditions', value: [conditionValue] },
-        ];
-        if (approved && optionIndex !== undefined) {
-          statusPatches.push({
-            op: proposal.status?.steps?.analysis?.selectedOption === undefined ? 'add' : 'replace',
-            path: '/status/steps/analysis/selectedOption',
-            value: optionIndex,
-          });
-        }
-
-        const { name, namespace } = proposal.metadata;
-        const statusUrl = `/api/kubernetes/apis/${LightspeedProposalModel.apiGroup}/${LightspeedProposalModel.apiVersion}/namespaces/${namespace}/${LightspeedProposalModel.plural}/${name}/status`;
-        const response = await consoleFetch(statusUrl, {
-          body: JSON.stringify(statusPatches),
-          headers: { 'Content-Type': 'application/json-patch+json' },
-          method: 'PATCH',
-        });
-        if (!(response as Response).ok) {
-          throw new Error(`Status update failed: ${(response as Response).statusText}`);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update proposal');
-      } finally {
-        setInProgress(false);
-      }
-    },
-    [proposal],
+  return (
+    <Dropdown
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      onSelect={(_e, value) => {
+        onSelect(value as string);
+        setIsOpen(false);
+      }}
+      toggle={(toggleRef) => (
+        <MenuToggle onClick={() => setIsOpen((o) => !o)} ref={toggleRef} variant="secondary">
+          {displayLabel}
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        {agentNames.map((name) => (
+          <DropdownItem isSelected={name === selected} key={name} value={name}>
+            {name === defaultAgent ? `${name} (${t('default')})` : name}
+          </DropdownItem>
+        ))}
+      </DropdownList>
+    </Dropdown>
   );
+};
 
-  return {
-    approve: React.useCallback(
-      (maxAttempts?: number, optionIndex?: number) =>
-        handleApproval(true, maxAttempts, optionIndex),
-      [handleApproval],
-    ),
-    clearError: React.useCallback(() => setError(null), []),
-    deny: React.useCallback(() => handleApproval(false), [handleApproval]),
-    error,
-    inProgress,
-  };
+const ApprovalCard: React.FC<{
+  approval: StageApprovalResult;
+  approveLabel: string;
+  message: string;
+  defaultAgent?: string;
+  agentNames: string[];
+}> = ({ approval, approveLabel, message, defaultAgent, agentNames }) => {
+  const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+  const [selectedAgent, setSelectedAgent] = React.useState(defaultAgent ?? '');
+  const agentOverride = selectedAgent && selectedAgent !== defaultAgent ? selectedAgent : undefined;
+
+  return (
+    <Stack className="ols-plugin__proposal-tab-content" hasGutter>
+      <StackItem>
+        <Card>
+          <CardTitle>{t('Approval Required')}</CardTitle>
+          <CardBody>
+            <Stack hasGutter>
+              <StackItem>{message}</StackItem>
+              <StackItem>
+                <Flex
+                  alignItems={{ default: 'alignItemsCenter' }}
+                  spaceItems={{ default: 'spaceItemsSm' }}
+                >
+                  {agentNames.length > 0 && (
+                    <FlexItem>
+                      <AgentDropdown
+                        agentNames={agentNames}
+                        defaultAgent={defaultAgent}
+                        onSelect={setSelectedAgent}
+                        selected={selectedAgent}
+                      />
+                    </FlexItem>
+                  )}
+                  <FlexItem>
+                    <Button
+                      isDisabled={approval.inProgress}
+                      isLoading={approval.inProgress}
+                      onClick={() => approval.approve({ agent: agentOverride })}
+                      variant="primary"
+                    >
+                      {approveLabel}
+                    </Button>
+                  </FlexItem>
+                  <FlexItem>
+                    <Button
+                      isDisabled={approval.inProgress}
+                      onClick={() => approval.deny()}
+                      variant="secondary"
+                    >
+                      {t('Deny')}
+                    </Button>
+                  </FlexItem>
+                </Flex>
+              </StackItem>
+              {approval.error && (
+                <StackItem>
+                  <Alert isInline title={t('Action failed')} variant="danger">
+                    {approval.error}
+                  </Alert>
+                </StackItem>
+              )}
+            </Stack>
+          </CardBody>
+        </Card>
+      </StackItem>
+    </Stack>
+  );
 };
 
 const SandboxDisplay: React.FC<{ label: string; sandbox?: SandboxInfo }> = ({ label, sandbox }) => {
@@ -909,18 +937,23 @@ const StructuredResult: React.FC<{ data: ExecutionStepStatus }> = ({ data }) => 
 
 interface ProposalTabProps {
   proposal: LightspeedProposal;
-  approve?: (_maxAttempts?: number, _optionIndex?: number) => void;
-  deny?: () => void;
-  inProgress?: boolean;
+  analysisApproval: StageApprovalResult;
+  executionApproval: StageApprovalResult;
+  agentNames: string[];
 }
 
-const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inProgress }) => {
+const ProposalTab: React.FC<ProposalTabProps> = ({
+  proposal,
+  analysisApproval,
+  executionApproval,
+  agentNames,
+}) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const analysis = proposal.status?.steps?.analysis;
   const options = analysis?.options ?? [];
   const hasAnalysis = options.length > 0;
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
-  const showApproval = phase === 'Proposed';
+  const showExecutionApproval = executionApproval.needsApproval && hasAnalysis;
   const [confirmRetries, setConfirmRetries] = React.useState<number | null>(null);
   const [retryDropdownOpen, setRetryDropdownOpen] = React.useState(false);
   const [localSelectedOption, setLocalSelectedOption] = React.useState<number | undefined>(
@@ -940,18 +973,33 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
     return () => clearTimeout(timer);
   }, [confirmRetries]);
 
+  const [execAgent, setExecAgent] = React.useState(proposal.spec.execution?.agent ?? '');
+  React.useEffect(() => {
+    setExecAgent(proposal.spec.execution?.agent ?? '');
+  }, [proposal.spec.execution?.agent]);
+  const execAgentOverride = execAgent && execAgent !== proposal.spec.execution?.agent ? execAgent : undefined;
+
   const sandboxPod = analysis?.sandbox?.claimName;
   const sandboxNs = analysis?.sandbox?.namespace || 'openshift-lightspeed';
   const isAnalyzing = phase === 'Analyzing' || phase === 'Pending';
 
-  // Auto-collapse the log viewer once analysis data arrives
   const [logsExpanded, setLogsExpanded] = useAutoCollapseLogs(hasAnalysis);
 
-  const isAdvisory =
-    derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]) === 'AwaitingSync' || !proposal.status?.steps?.execution;
+  const isAdvisory = !proposal.spec.execution;
 
   if (!hasAnalysis) {
-    // Show live sandbox logs while analyzing
+    if (analysisApproval.needsApproval && !sandboxPod) {
+      return (
+        <ApprovalCard
+          agentNames={agentNames}
+          approval={analysisApproval}
+          approveLabel={t('Approve Analysis')}
+          defaultAgent={proposal.spec.analysis?.agent}
+          message={t('This proposal requires approval before analysis can begin.')}
+        />
+      );
+    }
+
     if (isAnalyzing && sandboxPod) {
       return (
         <Stack className="ols-plugin__proposal-tab-content" hasGutter>
@@ -966,7 +1014,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
         </Stack>
       );
     }
-    const isTerminal = phase === 'Escalated' || phase === 'Failed';
+    const isTerminal = phase === 'Escalated' || phase === 'Failed' || phase === 'Denied';
     const message = isTerminal
       ? t('Analysis did not complete — no proposal was generated.')
       : t('No proposal generated yet.');
@@ -981,12 +1029,12 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
     <>
       <StackItem>
         <RemediationOptionsView
-          onSelect={showApproval ? setLocalSelectedOption : undefined}
+          onSelect={showExecutionApproval ? setLocalSelectedOption : undefined}
           options={options}
           selectedIndex={localSelectedOption}
         />
       </StackItem>
-      {showApproval && isAdvisory && (
+      {showExecutionApproval && isAdvisory && (
         <StackItem>
           <Alert isInline title={t('Execution is skipped for this proposal')} variant="info">
             {t(
@@ -995,7 +1043,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
           </Alert>
         </StackItem>
       )}
-      {showApproval && optionSelected && approve && deny && (
+      {showExecutionApproval && optionSelected && (
         <StackItem>
           <Flex
             alignItems={{ default: 'alignItemsCenter' }}
@@ -1003,10 +1051,20 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
           >
             {confirmRetries === null ? (
               <>
+                {agentNames.length > 0 && (
+                  <FlexItem>
+                    <AgentDropdown
+                      agentNames={agentNames}
+                      defaultAgent={proposal.spec.execution?.agent}
+                      onSelect={setExecAgent}
+                      selected={execAgent}
+                    />
+                  </FlexItem>
+                )}
                 <FlexItem className="ols-plugin__approve-split">
                   <Button
                     className="ols-plugin__approve-split-main"
-                    isDisabled={inProgress}
+                    isDisabled={executionApproval.inProgress}
                     onClick={() => setConfirmRetries(0)}
                     variant="danger"
                   >
@@ -1025,7 +1083,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
                       <Button
                         aria-label={t('Approve with retries')}
                         className="ols-plugin__approve-split-toggle"
-                        isDisabled={inProgress}
+                        isDisabled={executionApproval.inProgress}
                         onClick={() => setRetryDropdownOpen((o) => !o)}
                         ref={toggleRef}
                         variant="danger"
@@ -1045,9 +1103,9 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
                 </FlexItem>
                 <FlexItem>
                   <Button
-                    isDisabled={inProgress}
-                    isLoading={inProgress}
-                    onClick={deny}
+                    isDisabled={executionApproval.inProgress}
+                    isLoading={executionApproval.inProgress}
+                    onClick={() => executionApproval.deny()}
                     variant="secondary"
                   >
                     {t('Deny')}
@@ -1059,9 +1117,15 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
                 <FlexItem>
                   <Button
                     className="ols-plugin__confirm-sweep"
-                    isDisabled={inProgress}
-                    isLoading={inProgress}
-                    onClick={() => approve(confirmRetries, localSelectedOption)}
+                    isDisabled={executionApproval.inProgress}
+                    isLoading={executionApproval.inProgress}
+                    onClick={() =>
+                      executionApproval.approve({
+                        maxAttempts: confirmRetries,
+                        option: localSelectedOption,
+                        agent: execAgentOverride,
+                      })
+                    }
                     variant="danger"
                   >
                     {confirmRetries > 0
@@ -1071,7 +1135,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
                 </FlexItem>
                 <FlexItem>
                   <Button
-                    isDisabled={inProgress}
+                    isDisabled={executionApproval.inProgress}
                     onClick={() => setConfirmRetries(null)}
                     variant="link"
                   >
@@ -1081,6 +1145,13 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
               </>
             )}
           </Flex>
+        </StackItem>
+      )}
+      {executionApproval.error && (
+        <StackItem>
+          <Alert isInline title={t('Action failed')} variant="danger">
+            {executionApproval.error}
+          </Alert>
         </StackItem>
       )}
     </>
@@ -1100,11 +1171,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({ proposal, approve, deny, inPr
         </StackItem>
       )}
       <StackItem>
-        {showApproval ? (
-          <RefineChat proposal={proposal}>{proposalContent}</RefineChat>
-        ) : (
-          proposalContent
-        )}
+        {proposalContent}
       </StackItem>
     </Stack>
   );
@@ -1117,7 +1184,7 @@ const ResultTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => 
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const sandboxPod = execution?.sandbox?.claimName;
   const sandboxNs = execution?.sandbox?.namespace || 'openshift-lightspeed';
-  const isExecuting = phase === 'Approved' || phase === 'Executing';
+  const isExecuting = phase === 'Executing';
 
   // Auto-collapse logs once the result arrives
   const [logsExpanded, setLogsExpanded] = useAutoCollapseLogs(hasResult);
@@ -1164,10 +1231,12 @@ const ResultTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => 
   );
 };
 
-const VerificationTab: React.FC<{ proposal: LightspeedProposal; onEscalate?: () => void }> = ({
-  proposal,
-  onEscalate,
-}) => {
+const VerificationTab: React.FC<{
+  proposal: LightspeedProposal;
+  onEscalate?: () => void;
+  verificationApproval: StageApprovalResult;
+  agentNames: string[];
+}> = ({ proposal, onEscalate, verificationApproval, agentNames }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const verification = proposal.status?.steps?.verification;
@@ -1183,6 +1252,18 @@ const VerificationTab: React.FC<{ proposal: LightspeedProposal; onEscalate?: () 
   const [logsExpanded, setLogsExpanded] = useAutoCollapseLogs(hasResult);
 
   if (!hasResult && !sandboxPod) {
+    if (verificationApproval.needsApproval) {
+      return (
+        <ApprovalCard
+          agentNames={agentNames}
+          approval={verificationApproval}
+          approveLabel={t('Approve Verification')}
+          defaultAgent={proposal.spec.verification?.agent}
+          message={t('Verification requires approval before it can proceed.')}
+        />
+      );
+    }
+
     const message = isVerifying
       ? t('Waiting for verification sandbox...')
       : t('No verification result yet.');
@@ -1369,6 +1450,41 @@ const ProposalDetailPage: React.FC = () => {
     watchConfig,
   );
 
+  const approvalWatchConfig = React.useMemo(
+    () => ({
+      groupVersionKind: {
+        group: LightspeedProposalApprovalModel.apiGroup,
+        kind: LightspeedProposalApprovalModel.kind,
+        version: LightspeedProposalApprovalModel.apiVersion,
+      },
+      name,
+      namespace: ns,
+    }),
+    [name, ns],
+  );
+
+  const [approval, , approvalError] = useK8sWatchResource<
+    LightspeedProposalApproval & K8sResourceCommon
+  >(approvalWatchConfig);
+
+  const agentListConfig = React.useMemo(
+    () => ({
+      groupVersionKind: {
+        group: LightspeedAgentModel.apiGroup,
+        kind: LightspeedAgentModel.kind,
+        version: LightspeedAgentModel.apiVersion,
+      },
+      isList: true,
+    }),
+    [],
+  );
+
+  const [agentList] = useK8sWatchResource<K8sResourceCommon[]>(agentListConfig);
+  const agentNames = React.useMemo(
+    () => (Array.isArray(agentList) ? agentList.map((a) => a.metadata?.name ?? '').filter(Boolean) : []),
+    [agentList],
+  );
+
   const currentPhase = derivePhaseFromConditions(proposal?.status?.conditions as ProposalCondition[]);
 
   const activePhaseTab: TabKey | null = React.useMemo(() => {
@@ -1376,9 +1492,7 @@ const ProposalDetailPage: React.FC = () => {
       case 'Pending':
       case 'Analyzing':
         return 'proposal';
-      case 'Approved':
       case 'Executing':
-      case 'AwaitingSync':
         return 'result';
       case 'Verifying':
         return 'verification';
@@ -1387,34 +1501,20 @@ const ProposalDetailPage: React.FC = () => {
     }
   }, [currentPhase]);
 
-  const {
-    approve,
-    clearError,
-    deny,
-    error: actionError,
-    inProgress,
-  } = useApprovalActions(proposal);
+  const analysisApproval = useStageApproval(proposal, approval, 'Analysis', currentPhase);
+  const executionApproval = useStageApproval(proposal, approval, 'Execution', currentPhase);
+  const verificationApproval = useStageApproval(proposal, approval, 'Verification', currentPhase);
+  const actionError =
+    approvalError?.message ||
+    analysisApproval.error ||
+    executionApproval.error ||
+    verificationApproval.error;
+  const clearError = React.useCallback(() => {
+    analysisApproval.clearError();
+    executionApproval.clearError();
+    verificationApproval.clearError();
+  }, [analysisApproval.clearError, executionApproval.clearError, verificationApproval.clearError]);
   const [escalateOpen, setEscalateOpen] = React.useState(false);
-  const handleVerifyNow = React.useCallback(async () => {
-    try {
-      const now = new Date().toISOString();
-      const updatedConditions = (proposal?.status?.conditions || []).map((c) =>
-        c.type === 'AwaitingSync'
-          ? { ...c, status: 'False', reason: 'SyncConfirmed', message: 'User confirmed sync via console', lastTransitionTime: now }
-          : c,
-      );
-      const url = `/api/kubernetes/apis/${LightspeedProposalModel.apiGroup}/${LightspeedProposalModel.apiVersion}/namespaces/${ns}/lightspeedproposals/${name}/status`;
-      await consoleFetch(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/merge-patch+json' },
-        body: JSON.stringify({
-          status: { conditions: updatedConditions },
-        }),
-      });
-    } catch (e) {
-      console.error('Failed to trigger verification:', e);
-    }
-  }, [ns, name, proposal]);
 
   if (!loaded) {
     return (
@@ -1516,6 +1616,13 @@ const ProposalDetailPage: React.FC = () => {
     verification: t('Verification'),
   };
 
+  const tabNeedsApproval: Record<TabKey, boolean> = {
+    overview: false,
+    proposal: analysisApproval.needsApproval || executionApproval.needsApproval,
+    result: false,
+    verification: verificationApproval.needsApproval,
+  };
+
   return (
     <PageSection>
       <Flex
@@ -1581,7 +1688,12 @@ const ProposalDetailPage: React.FC = () => {
             type="button"
           >
             {tabLabels[id]}
-            {activePhaseTab === id && effectiveTab !== id && (
+            {tabNeedsApproval[id] && (
+              <Label className="ols-plugin__chevron-tab-iteration" color="blue" isCompact>
+                {t('Needs approval')}
+              </Label>
+            )}
+            {activePhaseTab === id && effectiveTab !== id && !tabNeedsApproval[id] && (
               <span className="ols-plugin__tab-active-dot" />
             )}
             {attempt > 1 && id === 'overview' && (
@@ -1600,34 +1712,21 @@ const ProposalDetailPage: React.FC = () => {
       >
         {effectiveTab === 'overview' && <OverviewTab proposal={proposal} />}
         {effectiveTab === 'proposal' && (
-          <ProposalTab approve={approve} deny={deny} inProgress={inProgress} proposal={proposal} />
+          <ProposalTab
+            agentNames={agentNames}
+            analysisApproval={analysisApproval}
+            executionApproval={executionApproval}
+            proposal={proposal}
+          />
         )}
-        {effectiveTab === 'result' && (
-          <>
-            {currentPhase === 'AwaitingSync' && (
-              <Alert
-                isInline
-                style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
-                title={t('Awaiting external sync')}
-                variant="info"
-              >
-                <p>
-                  {t('Apply the proposed changes externally, then click Verify Now when ready.')}
-                </p>
-                <Button
-                  onClick={() => handleVerifyNow()}
-                  style={{ marginTop: 'var(--pf-t--global--spacer--sm)' }}
-                  variant="primary"
-                >
-                  {t('Verify Now')}
-                </Button>
-              </Alert>
-            )}
-            <ResultTab proposal={proposal} />
-          </>
-        )}
+        {effectiveTab === 'result' && <ResultTab proposal={proposal} />}
         {effectiveTab === 'verification' && (
-          <VerificationTab onEscalate={() => setEscalateOpen(true)} proposal={proposal} />
+          <VerificationTab
+            agentNames={agentNames}
+            onEscalate={() => setEscalateOpen(true)}
+            proposal={proposal}
+            verificationApproval={verificationApproval}
+          />
         )}
       </div>
     </PageSection>

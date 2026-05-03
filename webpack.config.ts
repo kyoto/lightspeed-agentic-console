@@ -30,12 +30,12 @@ const config: Configuration = {
     rules: [
       {
         test: /\.(jsx?|tsx?)$/,
-        exclude: /\/node_modules\//,
+        exclude: [/\/node_modules\//, /\.test\.(ts|tsx)$/, /\/__mocks__\//],
         use: [
           {
             loader: 'ts-loader',
             options: {
-              configFile: path.resolve(__dirname, 'tsconfig.json'),
+              configFile: path.resolve(__dirname, 'tsconfig.build.json'),
             },
           },
         ],

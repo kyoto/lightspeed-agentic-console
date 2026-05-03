@@ -68,37 +68,6 @@ export interface StatusTimelineProps {
   events: TimelineEvent[];
 }
 
-export interface RevisedProposalAction {
-  type: string;
-  description: string;
-  resource?: {
-    apiVersion: string;
-    kind: string;
-    name: string;
-    namespace?: string;
-  };
-  patch?: string;
-}
-
-export interface RevisedProposalProps {
-  description: string;
-  actions: RevisedProposalAction[];
-  risk: string;
-  reversible: boolean;
-  estimatedImpact?: string;
-}
-
-export interface RevisedVerificationProps {
-  description: string;
-  steps: import('../../../models/proposal').VerificationStep[];
-  rollbackPlan: { description: string; command: string } | string;
-}
-
-export interface RevisedRbacProps {
-  namespaceScoped: import('../../../models/proposal').PermissionRule[];
-  clusterScoped: import('../../../models/proposal').PermissionRule[];
-}
-
 export interface CmoAlertDiagnosisProps {
   alertName: string;
   severity: string;

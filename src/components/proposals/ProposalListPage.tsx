@@ -48,10 +48,7 @@ const filters: RowFilter<ProposalResource>[] = [
     items: [
       { id: 'Pending', title: 'Pending' },
       { id: 'Analyzing', title: 'Analyzing' },
-      { id: 'Proposed', title: 'Proposed' },
-      { id: 'Approved', title: 'Approved' },
       { id: 'Executing', title: 'Executing' },
-      { id: 'AwaitingSync', title: 'Awaiting Sync' },
       { id: 'Verifying', title: 'Verifying' },
       { id: 'Completed', title: 'Completed' },
       { id: 'Failed', title: 'Failed' },

@@ -17,6 +17,90 @@ export const LightspeedProposalGVK = {
   version: LightspeedProposalModel.apiVersion,
 };
 
+export const LightspeedAgentModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'Agent',
+  plural: 'agents',
+  abbr: 'LSA',
+  namespaced: false,
+  label: 'Agent',
+  labelPlural: 'Agents',
+};
+
+export const LightspeedProposalApprovalModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'ProposalApproval',
+  plural: 'proposalapprovals',
+  abbr: 'LSPA',
+  namespaced: true,
+  label: 'ProposalApproval',
+  labelPlural: 'ProposalApprovals',
+};
+
+export const LightspeedProposalApprovalGVK = {
+  group: LightspeedProposalApprovalModel.apiGroup,
+  kind: LightspeedProposalApprovalModel.kind,
+  version: LightspeedProposalApprovalModel.apiVersion,
+};
+
+// ProposalApproval types
+
+export type ApprovalStageType = 'Analysis' | 'Execution' | 'Verification';
+
+export type AnalysisApproval = {
+  agent?: string;
+};
+
+export type ExecutionApproval = {
+  agent?: string;
+  option?: number;
+};
+
+export type VerificationApproval = {
+  agent?: string;
+};
+
+export type ApprovalStage = {
+  type: ApprovalStageType;
+  denied?: boolean;
+  analysis?: AnalysisApproval;
+  execution?: ExecutionApproval;
+  verification?: VerificationApproval;
+};
+
+export type ApprovalStageStatus = {
+  name: string;
+  conditions?: ProposalCondition[];
+};
+
+export type ProposalApprovalSpec = {
+  stages?: ApprovalStage[];
+};
+
+export type ProposalApprovalStatus = {
+  stages?: ApprovalStageStatus[];
+};
+
+export type LightspeedProposalApproval = {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    name: string;
+    namespace: string;
+    uid?: string;
+    ownerReferences?: Array<{
+      apiVersion: string;
+      kind: string;
+      name: string;
+      uid: string;
+    }>;
+  };
+  spec?: ProposalApprovalSpec;
+  status?: ProposalApprovalStatus;
+};
+
 export type EscalationTrigger =
   | 'platform_bug'
   | 'remediation_failed'
@@ -28,13 +112,11 @@ export type ProposalPhase =
   | 'Pending'
   | 'Analyzing'
   | 'Proposed'
-  | 'Approved'
-  | 'Denied'
   | 'Executing'
-  | 'AwaitingSync'
   | 'Verifying'
   | 'Completed'
   | 'Failed'
+  | 'Denied'
   | 'Escalated';
 
 export type StepPhase = 'Pending' | 'Running' | 'Completed' | 'Failed' | 'Skipped';
@@ -160,6 +242,7 @@ export type AnalysisStepStatus = {
   phase?: StepPhase;
   options?: RemediationOption[];
   selectedOption?: number;
+  observedRevision?: number;
   sandbox?: SandboxInfo;
   conditions?: ProposalCondition[];
   components?: AdapterComponent[];
@@ -239,6 +322,8 @@ export type LightspeedProposal = {
     verification?: ProposalStep;
     parentRef?: string;
     maxAttempts?: number;
+    revision?: number;
+    revisionFeedback?: string;
   };
   status?: ProposalStatus;
 };
@@ -258,20 +343,16 @@ export const getPhaseDisplay = (phase?: ProposalPhase | string): PhaseDisplay =>
       return { color: 'blue', label: 'Analyzing' };
     case 'Proposed':
       return { color: 'teal', label: 'Proposed' };
-    case 'Approved':
-      return { color: 'blue', label: 'Approved' };
     case 'Executing':
       return { color: 'purple', label: 'Executing' };
-    case 'Validating':
-      return { color: 'orange', label: 'Validating' };
+    case 'Verifying':
+      return { color: 'orange', label: 'Verifying' };
     case 'Completed':
       return { color: 'green', label: 'Completed' };
     case 'Failed':
       return { color: 'red', label: 'Failed' };
     case 'Denied':
       return { color: 'red', label: 'Denied' };
-    case 'AwaitingSync':
-      return { color: 'teal', label: 'Awaiting Sync' };
     case 'Escalated':
       return { color: 'orangered', label: 'Escalated' };
     default:
@@ -279,6 +360,7 @@ export const getPhaseDisplay = (phase?: ProposalPhase | string): PhaseDisplay =>
   }
 };
 
+// SYNC: must match DerivePhase in lightspeed-agentic-operator/api/v1alpha1/proposal_types.go
 export const derivePhaseFromConditions = (
   conditions?: ProposalCondition[],
 ): ProposalPhase => {
@@ -289,8 +371,8 @@ export const derivePhaseFromConditions = (
   const escalated = get('Escalated');
   if (escalated?.status === 'True') return 'Escalated';
 
-  const approved = get('Approved');
-  if (approved?.status === 'False') return 'Denied';
+  const denied = get('Denied');
+  if (denied?.status === 'True') return 'Denied';
 
   const verified = get('Verified');
   if (verified) {
@@ -298,16 +380,13 @@ export const derivePhaseFromConditions = (
     if (verified.status === 'Unknown') return 'Verifying';
     switch (verified.reason) {
       case 'RetryingExecution':
-        return 'Approved';
+        return 'Executing';
       case 'RetriesExhausted':
-        return 'Proposed';
+        return 'Analyzing';
       default:
         return 'Failed';
     }
   }
-
-  const awaitingSync = get('AwaitingSync');
-  if (awaitingSync?.status === 'True') return 'AwaitingSync';
 
   const executed = get('Executed');
   if (executed) {
@@ -315,8 +394,6 @@ export const derivePhaseFromConditions = (
     if (executed.status === 'Unknown') return 'Executing';
     return 'Failed';
   }
-
-  if (approved?.status === 'True') return 'Approved';
 
   const analyzed = get('Analyzed');
   if (analyzed) {

@@ -6,7 +6,6 @@ import {
   HourglassStartIcon,
   InProgressIcon,
   SearchIcon,
-  SyncAltIcon,
   TimesCircleIcon,
 } from '@patternfly/react-icons';
 
@@ -21,17 +20,9 @@ const PhaseIcon: React.FC<{
     case 'Pending':
       return <HourglassStartIcon />;
     case 'Analyzing':
-    case 'Validating':
       return <SearchIcon />;
-    case 'Proposed':
-    case 'Approved':
-      return (
-        <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--severity--warning--default)" />
-      );
     case 'Executing':
       return <InProgressIcon />;
-    case 'AwaitingSync':
-      return <SyncAltIcon color="var(--pf-t--global--icon--color--severity--info--default)" />;
     case 'Completed': {
       if (executionFailed || verificationFailed) {
         return (

@@ -10,9 +10,6 @@ import type {
   DynamicComponentProps,
   EvidenceTableProps,
   ResourceDiffProps,
-  RevisedProposalProps,
-  RevisedRbacProps,
-  RevisedVerificationProps,
   StatusTimelineProps,
   VisualizationProps,
 } from './types';
@@ -22,7 +19,6 @@ import { ResourceDiff } from './ResourceDiff';
 import { ActionPicker } from './ActionPicker';
 import { EvidenceTable } from './EvidenceTable';
 import { StatusTimeline } from './StatusTimeline';
-import { RevisedProposal, RevisedVerification, RevisedRbac } from './RevisedComponents';
 import {
   CmoAlertDiagnosis,
   CmoMetricEvidence,
@@ -50,22 +46,6 @@ const DynamicComponent: React.FC<DynamicComponentProps> = ({ type, props, onActi
     case 'status_timeline':
     case 'lightspeed_status_timeline':
       return <StatusTimeline data={props as unknown as StatusTimelineProps} />;
-    case 'revised_proposal':
-    case 'lightspeed_revised_proposal':
-      return (
-        <RevisedProposal data={props as unknown as RevisedProposalProps} onAction={onAction} />
-      );
-    case 'revised_verification':
-    case 'lightspeed_revised_verification':
-      return (
-        <RevisedVerification
-          data={props as unknown as RevisedVerificationProps}
-          onAction={onAction}
-        />
-      );
-    case 'revised_rbac':
-    case 'lightspeed_revised_rbac':
-      return <RevisedRbac data={props as unknown as RevisedRbacProps} onAction={onAction} />;
     case 'cmo_alert_diagnosis':
       return <CmoAlertDiagnosis data={props as unknown as CmoAlertDiagnosisProps} />;
     case 'cmo_metric_evidence':
