@@ -40,8 +40,11 @@ import {
 
 import {
   AdapterComponent,
+  AnalysisResultCR,
+  AnalysisResultGVK,
   derivePhaseFromConditions,
-  ExecutionStepStatus,
+  ExecutionResultCR,
+  ExecutionResultGVK,
   getPhaseDisplay,
   getRiskColor,
   LightspeedAgentModel,
@@ -50,10 +53,12 @@ import {
   LightspeedProposalApprovalModel,
   LightspeedProposalModel,
   PermissionRule,
-  PreviousAttempt,
   ProposalCondition,
   RemediationOption,
   SandboxInfo,
+  StepResultRef,
+  VerificationResultCR,
+  VerificationResultGVK,
 } from '../../models/proposal';
 import { type StageApprovalResult, useStageApproval } from '../../hooks/useStageApproval';
 import { MarkdownText } from './MarkdownText';
@@ -257,36 +262,13 @@ const SandboxDisplay: React.FC<{ label: string; sandbox?: SandboxInfo }> = ({ la
   );
 };
 
-const PreviousAttemptsSection: React.FC<{ attempts: PreviousAttempt[] }> = ({ attempts }) => {
-  const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
-  return (
-    <Stack hasGutter>
-      {attempts.map((a) => (
-        <StackItem key={a.attempt}>
-          <ExpandableSection
-            toggleText={`${t('Attempt')} ${a.attempt}${a.failedPhase ? ` — ${t('failed at')} ${a.failedPhase}` : ''}`}
-          >
-            <div className="ols-plugin__proposal-attempt">
-              <DescriptionList isCompact isHorizontal>
-                {a.failureReason && (
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>{t('Failure Reason')}</DescriptionListTerm>
-                    <DescriptionListDescription>{a.failureReason}</DescriptionListDescription>
-                  </DescriptionListGroup>
-                )}
-              </DescriptionList>
-            </div>
-          </ExpandableSection>
-        </StackItem>
-      ))}
-    </Stack>
-  );
-};
-
-const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => {
+const OverviewTab: React.FC<{
+  proposal: LightspeedProposal;
+  latestExecutionResult?: ExecutionResultCR;
+  latestVerificationResult?: VerificationResultCR;
+}> = ({ proposal, latestExecutionResult, latestVerificationResult }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const phase = getPhaseDisplay(derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]));
-  const attempts = proposal.status?.previousAttempts;
   const sourceUrl = proposal.metadata.annotations?.['ols.openshift.io/source-url'];
   const sourceName = proposal.metadata.annotations?.['ols.openshift.io/source-name'] || t('Source');
 
@@ -307,8 +289,8 @@ const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) =
                     <FlexItem>
                       <PhaseIcon
                         phase={derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[])}
-                        executionFailed={proposal.status?.steps?.execution?.success === false}
-                        verificationFailed={proposal.status?.steps?.verification?.success === false}
+                        executionFailed={latestExecutionResult?.success === false}
+                        verificationFailed={latestVerificationResult?.success === false}
                       />
                     </FlexItem>
                     <FlexItem>
@@ -394,16 +376,6 @@ const OverviewTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) =
           </CardBody>
         </Card>
       </StackItem>
-      {attempts && attempts.length > 0 && (
-        <StackItem>
-          <Card>
-            <CardTitle>{t('Previous Attempts')}</CardTitle>
-            <CardBody>
-              <PreviousAttemptsSection attempts={attempts} />
-            </CardBody>
-          </Card>
-        </StackItem>
-      )}
     </Stack>
   );
 };
@@ -825,7 +797,7 @@ const RemediationOptionsView: React.FC<{
   );
 };
 
-const StructuredResult: React.FC<{ data: ExecutionStepStatus }> = ({ data }) => {
+const StructuredResult: React.FC<{ data: ExecutionResultCR }> = ({ data }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
 
   return (
@@ -954,6 +926,7 @@ interface ProposalTabProps {
   analysisApproval: StageApprovalResult;
   executionApproval: StageApprovalResult;
   agentNames: string[];
+  latestAnalysisResult?: AnalysisResultCR;
 }
 
 const ProposalTab: React.FC<ProposalTabProps> = ({
@@ -961,10 +934,11 @@ const ProposalTab: React.FC<ProposalTabProps> = ({
   analysisApproval,
   executionApproval,
   agentNames,
+  latestAnalysisResult,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const analysis = proposal.status?.steps?.analysis;
-  const options = analysis?.options ?? [];
+  const options = latestAnalysisResult?.options ?? [];
   const hasAnalysis = options.length > 0;
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const showExecutionApproval = executionApproval.needsApproval && hasAnalysis;
@@ -1309,10 +1283,13 @@ const ProposalTab: React.FC<ProposalTabProps> = ({
   );
 };
 
-const ResultTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => {
+const ResultTab: React.FC<{
+  proposal: LightspeedProposal;
+  latestExecutionResult?: ExecutionResultCR;
+}> = ({ proposal, latestExecutionResult }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const execution = proposal.status?.steps?.execution;
-  const hasResult = !!(execution?.actionsTaken || execution?.success !== undefined);
+  const hasResult = !!latestExecutionResult;
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const sandboxPod = execution?.sandbox?.claimName;
   const sandboxNs = execution?.sandbox?.namespace || 'openshift-lightspeed';
@@ -1354,9 +1331,9 @@ const ResultTab: React.FC<{ proposal: LightspeedProposal }> = ({ proposal }) => 
           )}
         </StackItem>
       )}
-      {hasResult && execution && (
+      {hasResult && latestExecutionResult && (
         <StackItem>
-          <StructuredResult data={execution} />
+          <StructuredResult data={latestExecutionResult} />
         </StackItem>
       )}
     </Stack>
@@ -1368,15 +1345,12 @@ const VerificationTab: React.FC<{
   onEscalate?: () => void;
   verificationApproval: StageApprovalResult;
   agentNames: string[];
-}> = ({ proposal, onEscalate, verificationApproval, agentNames }) => {
+  latestVerificationResult?: VerificationResultCR;
+}> = ({ proposal, onEscalate, verificationApproval, agentNames, latestVerificationResult }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const verification = proposal.status?.steps?.verification;
-  const hasResult = !!(
-    verification?.checks ||
-    verification?.summary ||
-    verification?.success !== undefined
-  );
+  const hasResult = !!latestVerificationResult;
   const sandboxPod = verification?.sandbox?.claimName;
   const sandboxNs = verification?.sandbox?.namespace || 'openshift-lightspeed';
   const isVerifying = phase === 'Verifying';
@@ -1428,7 +1402,7 @@ const VerificationTab: React.FC<{
           )}
         </StackItem>
       )}
-      {hasResult && verification && (
+      {hasResult && latestVerificationResult && (
         <StackItem>
           <Card>
             <CardTitle>
@@ -1438,23 +1412,23 @@ const VerificationTab: React.FC<{
               >
                 <FlexItem>{t('Verification Result')}</FlexItem>
                 <FlexItem>
-                  <Label color={verification.success ? 'green' : 'red'}>
-                    {verification.success ? t('Passed') : t('Failed')}
+                  <Label color={latestVerificationResult.success ? 'green' : 'red'}>
+                    {latestVerificationResult.success ? t('Passed') : t('Failed')}
                   </Label>
                 </FlexItem>
               </Flex>
             </CardTitle>
             <CardBody>
               <Stack hasGutter>
-                {verification.summary && (
+                {latestVerificationResult.summary && (
                   <StackItem>
-                    <MarkdownText content={verification.summary} />
+                    <MarkdownText content={latestVerificationResult.summary} />
                   </StackItem>
                 )}
-                {verification.checks && verification.checks.length > 0 && (
+                {latestVerificationResult.checks && latestVerificationResult.checks.length > 0 && (
                   <StackItem>
                     <Stack hasGutter>
-                      {verification.checks.map((check, i) => (
+                      {latestVerificationResult.checks.map((check, i) => (
                         <StackItem key={i}>
                           <Card isCompact isPlain>
                             <CardBody>
@@ -1494,7 +1468,7 @@ const VerificationTab: React.FC<{
                     </Stack>
                   </StackItem>
                 )}
-                {!verification.success && onEscalate && (
+                {!latestVerificationResult.success && onEscalate && (
                   <StackItem>
                     <Button onClick={onEscalate} variant="danger">
                       {t('Escalate')}
@@ -1507,7 +1481,7 @@ const VerificationTab: React.FC<{
         </StackItem>
       )}
 
-      <AdapterComponents components={verification?.components} />
+      <AdapterComponents components={latestVerificationResult?.components} />
     </Stack>
   );
 };
@@ -1617,6 +1591,82 @@ const ProposalDetailPage: React.FC = () => {
     [agentList],
   );
 
+  // Watch result CRs filtered by proposal label
+  const resultLabelSelector = React.useMemo(
+    () => name ? { matchLabels: { 'agentic.openshift.io/proposal': name } } : undefined,
+    [name],
+  );
+
+  const analysisResultsConfig = React.useMemo(
+    () => name ? {
+      groupVersionKind: AnalysisResultGVK,
+      namespace: ns,
+      selector: resultLabelSelector,
+      isList: true,
+    } : null,
+    [name, ns, resultLabelSelector],
+  );
+  const [analysisResults] = useK8sWatchResource<AnalysisResultCR[]>(analysisResultsConfig);
+
+  const executionResultsConfig = React.useMemo(
+    () => name ? {
+      groupVersionKind: ExecutionResultGVK,
+      namespace: ns,
+      selector: resultLabelSelector,
+      isList: true,
+    } : null,
+    [name, ns, resultLabelSelector],
+  );
+  const [executionResults] = useK8sWatchResource<ExecutionResultCR[]>(executionResultsConfig);
+
+  const verificationResultsConfig = React.useMemo(
+    () => name ? {
+      groupVersionKind: VerificationResultGVK,
+      namespace: ns,
+      selector: resultLabelSelector,
+      isList: true,
+    } : null,
+    [name, ns, resultLabelSelector],
+  );
+  const [verificationResults] = useK8sWatchResource<VerificationResultCR[]>(verificationResultsConfig);
+
+  // Helper: find the result CR referenced by the latest StepResultRef
+  const getLatestResult = React.useCallback(
+    <T extends { metadata: { name: string } }>(
+      results: T[] | undefined,
+      refs: StepResultRef[] | undefined,
+    ): T | undefined => {
+      if (!refs?.length || !results?.length) return undefined;
+      const latestRef = refs[refs.length - 1];
+      return results.find((r) => r.metadata.name === latestRef.name);
+    },
+    [],
+  );
+
+  const latestAnalysisResult = React.useMemo(
+    () => getLatestResult(
+      Array.isArray(analysisResults) ? analysisResults : undefined,
+      proposal?.status?.steps?.analysis?.results,
+    ),
+    [analysisResults, proposal?.status?.steps?.analysis?.results, getLatestResult],
+  );
+
+  const latestExecutionResult = React.useMemo(
+    () => getLatestResult(
+      Array.isArray(executionResults) ? executionResults : undefined,
+      proposal?.status?.steps?.execution?.results,
+    ),
+    [executionResults, proposal?.status?.steps?.execution?.results, getLatestResult],
+  );
+
+  const latestVerificationResult = React.useMemo(
+    () => getLatestResult(
+      Array.isArray(verificationResults) ? verificationResults : undefined,
+      proposal?.status?.steps?.verification?.results,
+    ),
+    [verificationResults, proposal?.status?.steps?.verification?.results, getLatestResult],
+  );
+
   const currentPhase = derivePhaseFromConditions(proposal?.status?.conditions as ProposalCondition[]);
 
   const activePhaseTab: TabKey | null = React.useMemo(() => {
@@ -1678,12 +1728,12 @@ const ProposalDetailPage: React.FC = () => {
     const triggerName =
       proposal.metadata?.labels?.['ols.openshift.io/trigger-name'] || proposal.metadata.name;
     const analysis = proposal.status?.steps?.analysis;
-    const options = analysis?.options ?? [];
+    const triggerOptions = latestAnalysisResult?.options ?? [];
     const sandboxPod = analysis?.sandbox?.claimName;
     const sandboxNs = analysis?.sandbox?.namespace || 'openshift-lightspeed';
     const isAnalyzing =
       currentPhase === 'Analyzing' || currentPhase === 'Pending';
-    const hasOptions = options.length > 0;
+    const hasOptions = triggerOptions.length > 0;
 
     return (
       <PageSection>
@@ -1700,8 +1750,8 @@ const ProposalDetailPage: React.FC = () => {
               <FlexItem>
                 <PhaseIcon
                   phase={currentPhase}
-                  executionFailed={proposal.status?.steps?.execution?.success === false}
-                  verificationFailed={proposal.status?.steps?.verification?.success === false}
+                  executionFailed={latestExecutionResult?.success === false}
+                  verificationFailed={latestVerificationResult?.success === false}
                 />
               </FlexItem>
               <FlexItem>
@@ -1724,7 +1774,7 @@ const ProposalDetailPage: React.FC = () => {
               </Card>
             </StackItem>
           )}
-          {hasOptions && <TriggerOptionsView options={options} />}
+          {hasOptions && <TriggerOptionsView options={triggerOptions} />}
           {!hasOptions && !isAnalyzing && (
             <StackItem>
               <Alert isInline title={t('No options proposed')} variant="warning">
@@ -1770,8 +1820,8 @@ const ProposalDetailPage: React.FC = () => {
             <FlexItem>
               <PhaseIcon
                 phase={currentPhase}
-                executionFailed={proposal.status?.steps?.execution?.success === false}
-                verificationFailed={proposal.status?.steps?.verification?.success === false}
+                executionFailed={latestExecutionResult?.success === false}
+                verificationFailed={latestVerificationResult?.success === false}
               />
             </FlexItem>
             <FlexItem>
@@ -1842,19 +1892,32 @@ const ProposalDetailPage: React.FC = () => {
         id={`ols-tabpanel-${effectiveTab}`}
         role="tabpanel"
       >
-        {effectiveTab === 'overview' && <OverviewTab proposal={proposal} />}
+        {effectiveTab === 'overview' && (
+          <OverviewTab
+            proposal={proposal}
+            latestExecutionResult={latestExecutionResult}
+            latestVerificationResult={latestVerificationResult}
+          />
+        )}
         {effectiveTab === 'proposal' && (
           <ProposalTab
             agentNames={agentNames}
             analysisApproval={analysisApproval}
             executionApproval={executionApproval}
+            latestAnalysisResult={latestAnalysisResult}
             proposal={proposal}
           />
         )}
-        {effectiveTab === 'result' && <ResultTab proposal={proposal} />}
+        {effectiveTab === 'result' && (
+          <ResultTab
+            proposal={proposal}
+            latestExecutionResult={latestExecutionResult}
+          />
+        )}
         {effectiveTab === 'verification' && (
           <VerificationTab
             agentNames={agentNames}
+            latestVerificationResult={latestVerificationResult}
             onEscalate={() => setEscalateOpen(true)}
             proposal={proposal}
             verificationApproval={verificationApproval}

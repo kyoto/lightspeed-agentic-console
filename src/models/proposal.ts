@@ -45,6 +45,57 @@ export const LightspeedProposalApprovalGVK = {
   version: LightspeedProposalApprovalModel.apiVersion,
 };
 
+export const AnalysisResultModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'AnalysisResult',
+  plural: 'analysisresults',
+  abbr: 'AR',
+  namespaced: true,
+  label: 'AnalysisResult',
+  labelPlural: 'AnalysisResults',
+};
+
+export const AnalysisResultGVK = {
+  group: AnalysisResultModel.apiGroup,
+  kind: AnalysisResultModel.kind,
+  version: AnalysisResultModel.apiVersion,
+};
+
+export const ExecutionResultModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'ExecutionResult',
+  plural: 'executionresults',
+  abbr: 'ER',
+  namespaced: true,
+  label: 'ExecutionResult',
+  labelPlural: 'ExecutionResults',
+};
+
+export const ExecutionResultGVK = {
+  group: ExecutionResultModel.apiGroup,
+  kind: ExecutionResultModel.kind,
+  version: ExecutionResultModel.apiVersion,
+};
+
+export const VerificationResultModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'VerificationResult',
+  plural: 'verificationresults',
+  abbr: 'VR',
+  namespaced: true,
+  label: 'VerificationResult',
+  labelPlural: 'VerificationResults',
+};
+
+export const VerificationResultGVK = {
+  group: VerificationResultModel.apiGroup,
+  kind: VerificationResultModel.kind,
+  version: VerificationResultModel.apiVersion,
+};
+
 // ProposalApproval types
 
 export type ApprovalStageType = 'Analysis' | 'Execution' | 'Verification';
@@ -136,10 +187,9 @@ export type ProposalCondition = {
   message?: string;
 };
 
-export type PreviousAttempt = {
-  attempt: number;
-  failedPhase?: string;
-  failureReason?: string;
+export type StepResultRef = {
+  name: string;
+  success: boolean;
 };
 
 export type SkillsSource = {
@@ -240,12 +290,11 @@ export type RemediationOption = {
 
 export type AnalysisStepStatus = {
   phase?: StepPhase;
-  options?: RemediationOption[];
   selectedOption?: number;
   observedRevision?: number;
   sandbox?: SandboxInfo;
   conditions?: ProposalCondition[];
-  components?: AdapterComponent[];
+  results?: StepResultRef[];
 };
 
 export type ExecutionActionTaken = {
@@ -264,11 +313,10 @@ export type ExecutionVerification = {
 
 export type ExecutionStepStatus = {
   phase?: StepPhase;
-  success?: boolean;
-  actionsTaken?: ExecutionActionTaken[];
-  verification?: ExecutionVerification;
+  retryCount?: number;
   sandbox?: SandboxInfo;
-  components?: AdapterComponent[];
+  conditions?: ProposalCondition[];
+  results?: StepResultRef[];
 };
 
 export type VerificationCheck = {
@@ -280,18 +328,15 @@ export type VerificationCheck = {
 
 export type VerificationStepStatus = {
   phase?: StepPhase;
-  success?: boolean;
-  checks?: VerificationCheck[];
-  summary?: string;
   sandbox?: SandboxInfo;
-  components?: AdapterComponent[];
+  conditions?: ProposalCondition[];
+  results?: StepResultRef[];
 };
 
 export type ProposalStatus = {
   attempts?: number;
   steps?: StepsStatus;
   conditions?: ProposalCondition[];
-  previousAttempts?: PreviousAttempt[];
 };
 
 export type StepsStatus = {
@@ -326,6 +371,57 @@ export type LightspeedProposal = {
     revisionFeedback?: string;
   };
   status?: ProposalStatus;
+};
+
+// Result CR types — separate CRDs that hold step output data
+
+export type AnalysisResultCR = {
+  apiVersion: string;
+  kind: string;
+  metadata: { name: string; namespace: string; creationTimestamp?: string };
+  proposalName: string;
+  attempt: number;
+  success: boolean;
+  options?: RemediationOption[];
+  components?: AdapterComponent[];
+  sandbox?: SandboxInfo;
+  startTime?: string;
+  completionTime?: string;
+  failureReason?: string;
+};
+
+export type ExecutionResultCR = {
+  apiVersion: string;
+  kind: string;
+  metadata: { name: string; namespace: string; creationTimestamp?: string };
+  proposalName: string;
+  attempt: number;
+  retryIndex: number;
+  success: boolean;
+  actionsTaken?: ExecutionActionTaken[];
+  verification?: ExecutionVerification;
+  components?: AdapterComponent[];
+  sandbox?: SandboxInfo;
+  startTime?: string;
+  completionTime?: string;
+  failureReason?: string;
+};
+
+export type VerificationResultCR = {
+  apiVersion: string;
+  kind: string;
+  metadata: { name: string; namespace: string; creationTimestamp?: string };
+  proposalName: string;
+  attempt: number;
+  retryIndex: number;
+  success: boolean;
+  checks?: VerificationCheck[];
+  summary?: string;
+  components?: AdapterComponent[];
+  sandbox?: SandboxInfo;
+  startTime?: string;
+  completionTime?: string;
+  failureReason?: string;
 };
 
 // Display helpers
