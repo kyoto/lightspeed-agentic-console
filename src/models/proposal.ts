@@ -205,7 +205,7 @@ export type ProposalCondition = {
 
 export type StepResultRef = {
   name: string;
-  success: boolean;
+  outcome: 'Succeeded' | 'Failed';
 };
 
 export type SkillsSource = {
@@ -213,10 +213,16 @@ export type SkillsSource = {
   paths?: string[];
 };
 
+export type SecretMountSpec = {
+  type: 'EnvVar' | 'FilePath';
+  envVar?: { name: string };
+  filePath?: { path: string };
+};
+
 export type SecretRequirement = {
   name: string;
   description?: string;
-  mountAs: string;
+  mountAs: SecretMountSpec;
 };
 
 export type ToolsSpec = {
@@ -317,7 +323,7 @@ export type ExecutionActionTaken = {
   type: string;
   description: string;
   resource?: { apiVersion: string; kind: string; name: string; namespace?: string };
-  success: boolean;
+  outcome?: 'Succeeded' | 'Failed';
   output?: string;
   error?: string;
 };
@@ -397,19 +403,29 @@ export type LightspeedProposal = {
 
 // Result CR types — separate CRDs that hold step output data
 
+export type ResultCondition = {
+  type: 'Started' | 'Completed';
+  status: 'True' | 'False' | 'Unknown';
+  lastTransitionTime: string;
+  reason?: string;
+  message?: string;
+};
+
+export type ResultStatus = {
+  conditions?: ResultCondition[];
+};
+
 export type AnalysisResultCR = {
   apiVersion: string;
   kind: string;
   metadata: { name: string; namespace: string; creationTimestamp?: string };
   proposalName: string;
   attempt: number;
-  success: boolean;
   options?: RemediationOption[];
   components?: AdapterComponent[];
   sandbox?: SandboxInfo;
-  startTime?: string;
-  completionTime?: string;
   failureReason?: string;
+  status?: ResultStatus;
 };
 
 export type ExecutionResultCR = {
@@ -419,14 +435,12 @@ export type ExecutionResultCR = {
   proposalName: string;
   attempt: number;
   retryIndex: number;
-  success: boolean;
   actionsTaken?: ExecutionActionTaken[];
   verification?: ExecutionVerification;
   components?: AdapterComponent[];
   sandbox?: SandboxInfo;
-  startTime?: string;
-  completionTime?: string;
   failureReason?: string;
+  status?: ResultStatus;
 };
 
 export type VerificationResultCR = {
@@ -436,14 +450,12 @@ export type VerificationResultCR = {
   proposalName: string;
   attempt: number;
   retryIndex: number;
-  success: boolean;
   checks?: VerificationCheck[];
   summary?: string;
   components?: AdapterComponent[];
   sandbox?: SandboxInfo;
-  startTime?: string;
-  completionTime?: string;
   failureReason?: string;
+  status?: ResultStatus;
 };
 
 export type EscalationResultCR = {
@@ -452,14 +464,22 @@ export type EscalationResultCR = {
   metadata: { name: string; namespace: string; creationTimestamp?: string };
   proposalName: string;
   attempt: number;
-  success: boolean;
   summary?: string;
   content?: string;
   sandbox?: SandboxInfo;
-  startTime?: string;
-  completionTime?: string;
   failureReason?: string;
+  status?: ResultStatus;
 };
+
+type AnyResultCR = AnalysisResultCR | ExecutionResultCR | VerificationResultCR | EscalationResultCR;
+
+export function resultOutcome(cr: AnyResultCR | undefined): 'Succeeded' | 'Failed' | undefined {
+  const reason = cr?.status?.conditions?.find((c) => c.type === 'Completed')?.reason;
+  if (reason === 'Succeeded' || reason === 'Failed') {
+    return reason;
+  }
+  return undefined;
+}
 
 // Display helpers
 

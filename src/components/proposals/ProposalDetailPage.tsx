@@ -57,6 +57,7 @@ import {
   PermissionRule,
   ProposalCondition,
   RemediationOption,
+  resultOutcome,
   SandboxInfo,
   StepResultRef,
   VerificationResultCR,
@@ -273,6 +274,8 @@ const OverviewTab: React.FC<{
   const phase = getPhaseDisplay(derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]));
   const sourceUrl = proposal.metadata.annotations?.['ols.openshift.io/source-url'];
   const sourceName = proposal.metadata.annotations?.['ols.openshift.io/source-name'] || t('Source');
+  const execFailed = resultOutcome(latestExecutionResult) === 'Failed';
+  const verifyFailed = resultOutcome(latestVerificationResult) === 'Failed';
 
   return (
     <Stack className="ols-plugin__proposal-tab-content" hasGutter>
@@ -291,8 +294,8 @@ const OverviewTab: React.FC<{
                     <FlexItem>
                       <PhaseIcon
                         phase={derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[])}
-                        executionFailed={latestExecutionResult?.success === false}
-                        verificationFailed={latestVerificationResult?.success === false}
+                        executionFailed={execFailed}
+                        verificationFailed={verifyFailed}
                       />
                     </FlexItem>
                     <FlexItem>
@@ -789,6 +792,7 @@ const RemediationOptionsView: React.FC<{
 
 const StructuredResult: React.FC<{ data: ExecutionResultCR }> = ({ data }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+  const executionOutcome = resultOutcome(data);
 
   return (
     <Stack hasGutter>
@@ -797,13 +801,13 @@ const StructuredResult: React.FC<{ data: ExecutionResultCR }> = ({ data }) => {
           <CardTitle>
             <Flex alignItems={{ default: 'alignItemsCenter' }}>
               <FlexItem>
-                {data.success ? (
+                {executionOutcome === 'Succeeded' ? (
                   <CheckCircleIcon color="var(--pf-t--color--green--default)" />
                 ) : (
                   <ExclamationCircleIcon color="var(--pf-t--color--red--default)" />
                 )}
               </FlexItem>
-              <FlexItem>{data.success ? t('Execution Succeeded') : t('Execution Failed')}</FlexItem>
+              <FlexItem>{executionOutcome === 'Succeeded' ? t('Execution Succeeded') : t('Execution Failed')}</FlexItem>
             </Flex>
           </CardTitle>
         </Card>
@@ -823,7 +827,7 @@ const StructuredResult: React.FC<{ data: ExecutionResultCR }> = ({ data }) => {
                           <StackItem>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                               <FlexItem>
-                                {action.success ? (
+                                {action.outcome === 'Succeeded' ? (
                                   <CheckCircleIcon color="var(--pf-t--color--green--default)" />
                                 ) : (
                                   <ExclamationCircleIcon color="var(--pf-t--color--red--default)" />
@@ -1341,6 +1345,7 @@ const VerificationTab: React.FC<{
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const verification = proposal.status?.steps?.verification;
   const hasResult = !!latestVerificationResult;
+  const verificationOutcome = resultOutcome(latestVerificationResult);
   const sandboxPod = verification?.sandbox?.claimName;
   const sandboxNs = verification?.sandbox?.namespace || 'openshift-lightspeed';
   const isVerifying = phase === 'Verifying';
@@ -1402,8 +1407,8 @@ const VerificationTab: React.FC<{
               >
                 <FlexItem>{t('Verification Result')}</FlexItem>
                 <FlexItem>
-                  <Label color={latestVerificationResult.success ? 'green' : 'red'}>
-                    {latestVerificationResult.success ? t('Passed') : t('Failed')}
+                  <Label color={verificationOutcome === 'Succeeded' ? 'green' : 'red'}>
+                    {verificationOutcome === 'Succeeded' ? t('Passed') : t('Failed')}
                   </Label>
                 </FlexItem>
               </Flex>
@@ -1458,7 +1463,7 @@ const VerificationTab: React.FC<{
                     </Stack>
                   </StackItem>
                 )}
-                {!latestVerificationResult.success && onEscalate && (
+                {verificationOutcome === 'Failed' && onEscalate && (
                   <StackItem>
                     <Button onClick={onEscalate} variant="danger">
                       {t('Escalate')}
@@ -1486,6 +1491,7 @@ const EscalationTab: React.FC<{
   const phase = derivePhaseFromConditions(proposal.status?.conditions as ProposalCondition[]);
   const escalation = proposal.status?.steps?.escalation;
   const hasResult = !!latestEscalationResult;
+  const escalationOutcome = resultOutcome(latestEscalationResult);
   const sandboxPod = escalation?.sandbox?.claimName;
   const sandboxNs = escalation?.sandbox?.namespace || 'openshift-lightspeed';
   const isEscalating = phase === 'Escalating';
@@ -1547,8 +1553,8 @@ const EscalationTab: React.FC<{
               >
                 <FlexItem>{t('Escalation Result')}</FlexItem>
                 <FlexItem>
-                  <Label color={latestEscalationResult.success ? 'green' : 'red'}>
-                    {latestEscalationResult.success ? t('Completed') : t('Failed')}
+                  <Label color={escalationOutcome === 'Succeeded' ? 'green' : 'red'}>
+                    {escalationOutcome === 'Succeeded' ? t('Completed') : t('Failed')}
                   </Label>
                 </FlexItem>
               </Flex>
@@ -1783,6 +1789,8 @@ const ProposalDetailPage: React.FC = () => {
     [escalationResults, proposal?.status?.steps?.escalation?.results, getLatestResult],
   );
 
+  const executionFailed = resultOutcome(latestExecutionResult) === 'Failed';
+  const verificationFailed = resultOutcome(latestVerificationResult) === 'Failed';
   const currentPhase = derivePhaseFromConditions(proposal?.status?.conditions as ProposalCondition[]);
 
   const activePhaseTab: TabKey | null = React.useMemo(() => {
@@ -1871,8 +1879,8 @@ const ProposalDetailPage: React.FC = () => {
               <FlexItem>
                 <PhaseIcon
                   phase={currentPhase}
-                  executionFailed={latestExecutionResult?.success === false}
-                  verificationFailed={latestVerificationResult?.success === false}
+                  executionFailed={executionFailed}
+                  verificationFailed={verificationFailed}
                 />
               </FlexItem>
               <FlexItem>
@@ -1948,8 +1956,8 @@ const ProposalDetailPage: React.FC = () => {
             <FlexItem>
               <PhaseIcon
                 phase={currentPhase}
-                executionFailed={latestExecutionResult?.success === false}
-                verificationFailed={latestVerificationResult?.success === false}
+                executionFailed={executionFailed}
+                verificationFailed={verificationFailed}
               />
             </FlexItem>
             <FlexItem>
