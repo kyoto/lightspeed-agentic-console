@@ -181,7 +181,6 @@ const ApprovalCard: React.FC<{
 }> = ({ approval, approveLabel, message, defaultAgent, agentNames }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   const [selectedAgent, setSelectedAgent] = React.useState(defaultAgent ?? '');
-  const agentOverride = selectedAgent && selectedAgent !== defaultAgent ? selectedAgent : undefined;
 
   return (
     <Stack className="ols-plugin__proposal-tab-content" hasGutter>
@@ -210,7 +209,7 @@ const ApprovalCard: React.FC<{
                     <Button
                       isDisabled={approval.inProgress}
                       isLoading={approval.inProgress}
-                      onClick={() => approval.approve({ agent: agentOverride })}
+                      onClick={() => approval.approve({ agent: selectedAgent || undefined })}
                       variant="primary"
                     >
                       {approveLabel}
@@ -943,7 +942,6 @@ const ProposalTab: React.FC<ProposalTabProps> = ({
   React.useEffect(() => {
     setExecAgent(proposal.spec.execution?.agent ?? '');
   }, [proposal.spec.execution?.agent]);
-  const execAgentOverride = execAgent && execAgent !== proposal.spec.execution?.agent ? execAgent : undefined;
 
   const sandboxPod = analysis?.sandbox?.claimName;
   const sandboxNs = analysis?.sandbox?.namespace || 'openshift-lightspeed';
@@ -1151,7 +1149,7 @@ const ProposalTab: React.FC<ProposalTabProps> = ({
                     executionApproval.approve({
                       maxAttempts: confirmRetries,
                       option: localSelectedOption,
-                      agent: execAgentOverride,
+                      agent: execAgent || undefined,
                     })
                   }
                   variant="danger"
