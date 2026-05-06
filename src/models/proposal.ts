@@ -1,3 +1,6 @@
+// TODO: Auto-generate these types from the CRD OpenAPI schema using
+// openapi-typescript against the cluster's /openapi/v3/apis/agentic.openshift.io/v1alpha1
+// endpoint, or from the CRD YAML files in lightspeed-operator/config/crd/bases/.
 import { K8sModel } from '@openshift-console/dynamic-plugin-sdk';
 
 export const LightspeedProposalModel: K8sModel = {
@@ -412,8 +415,10 @@ export type AnalysisResultCR = {
   apiVersion: string;
   kind: string;
   metadata: { name: string; namespace: string; creationTimestamp?: string };
-  proposalName: string;
-  attempt: number;
+  spec: {
+    proposalName: string;
+    attempt: number;
+  };
   status?: {
     conditions?: ResultCondition[];
     options?: RemediationOption[];
@@ -427,9 +432,11 @@ export type ExecutionResultCR = {
   apiVersion: string;
   kind: string;
   metadata: { name: string; namespace: string; creationTimestamp?: string };
-  proposalName: string;
-  attempt: number;
-  retryIndex: number;
+  spec: {
+    proposalName: string;
+    attempt: number;
+    retryIndex?: number;
+  };
   status?: {
     conditions?: ResultCondition[];
     actionsTaken?: ExecutionActionTaken[];
@@ -443,9 +450,11 @@ export type VerificationResultCR = {
   apiVersion: string;
   kind: string;
   metadata: { name: string; namespace: string; creationTimestamp?: string };
-  proposalName: string;
-  attempt: number;
-  retryIndex: number;
+  spec: {
+    proposalName: string;
+    attempt: number;
+    retryIndex?: number;
+  };
   status?: {
     conditions?: ResultCondition[];
     checks?: VerificationCheck[];
@@ -459,8 +468,10 @@ export type EscalationResultCR = {
   apiVersion: string;
   kind: string;
   metadata: { name: string; namespace: string; creationTimestamp?: string };
-  proposalName: string;
-  attempt: number;
+  spec: {
+    proposalName: string;
+    attempt: number;
+  };
   status?: {
     conditions?: ResultCondition[];
     summary?: string;
