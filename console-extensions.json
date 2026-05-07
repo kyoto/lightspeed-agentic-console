@@ -1,0 +1,27 @@
+[
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/lightspeed/proposals",
+      "component": { "$codeRef": "ProposalListPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "path": "/lightspeed/proposals/:ns/:name",
+      "component": { "$codeRef": "ProposalDetailPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "lightspeedproposals",
+      "name": "%plugin__lightspeed-agentic-console-plugin~AI Hub%",
+      "href": "/lightspeed/proposals",
+      "perspective": "admin",
+      "section": "administration"
+    }
+  }
+]
