@@ -70,7 +70,7 @@ return <h1>{t('Hello, World!')}</h1>;
 "name": "%plugin__console-plugin-template~My Label%"
 ```
 
-**After adding/changing messages:** Run `yarn i18n` to update locale files in `/locales`
+**After adding/changing messages:** Run `npm run i18n` to update locale files in `/locales`
 
 ## File Organization
 
@@ -91,19 +91,19 @@ integration-tests/     # Cypress e2e tests
 ## Development Workflow
 
 ### Local Development
-1. `yarn install` - install dependencies
-2. `yarn start` - starts webpack dev server on port 9001 with CORS
-3. `yarn start-console` - runs OpenShift console in container (requires cluster login)
+1. `npm install` - install dependencies
+2. `npm start` - starts webpack dev server on port 9001 with CORS
+3. `npm run start-console` - runs OpenShift console in container (requires cluster login)
 4. Navigate to http://localhost:9000/example
 
 ### Code Quality
-- `yarn lint` - runs eslint, prettier, and stylelint (with --fix)
+- `npm run lint` - runs eslint, prettier, and stylelint (with --fix)
 - Linting is mandatory before commits
 - Follow existing code patterns in the repo
 
 ### Testing
-- `yarn test-cypress` - opens Cypress UI
-- `yarn test-cypress-headless` - runs Cypress in CI mode
+- `npm run test-cypress` - opens Cypress UI
+- `npm run test-cypress-headless` - runs Cypress in CI mode
 - Add e2e tests for new pages/features
 
 ## TypeScript Configuration
@@ -131,7 +131,7 @@ Current config has `strict: false` but enforces:
    }
    ```
 4. Optional: Add nav item in `console-extensions.json`
-5. Run `yarn i18n` if you added translatable strings
+5. Run `npm run i18n` if you added translatable strings
 
 ### Adding a Navigation Item
 ```json
@@ -226,8 +226,8 @@ See [Console Plugin SDK README](https://github.com/openshift/console/tree/master
 - **Use this template?** When creating a NEW OpenShift Console plugin from scratch
 - **Add a page?** Update console-extensions.json + exposedModules + create component
 - **Style something?** Use PatternFly components and CSS variables, prefix custom classes
-- **Add translations?** Use `t()` function, run `yarn i18n` after
-- **Test changes?** Run locally with `yarn start` + `yarn start-console`, add Cypress tests
+- **Add translations?** Use `t()` function, run `npm run i18n` after
+- **Test changes?** Run locally with `npm start` + `npm run start-console`, add Cypress tests
 - **Deploy?** Build image, push to registry, install via Helm chart
 
 ## Risk Levels
