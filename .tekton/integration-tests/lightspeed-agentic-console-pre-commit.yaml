@@ -1,0 +1,85 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lightspeed-agentic-console-pre-commits
+spec:
+  description: |
+    This pipeline runs pre-commit checks for OpenShift Lightspeed Agentic Console.
+  params:
+    - name: SNAPSHOT
+      description: 'The JSON string representing the snapshot of the application under test.'
+      default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest", "source": {"git": {"revision": "main"}}}]}'
+    - name: test-name
+      description: 'The name of the test corresponding to a defined Konflux integration test.'
+      default: 'lightspeed-agentic-console-pre-commits'
+  tasks:
+    - name: extract-snapshot-metadata
+      description: Extract console image and commit from SNAPSHOT input
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+      taskSpec:
+        results:
+          - name: console-image
+            value: "$(steps.get-snapshot-images.results.console-image)"
+          - name: commit
+            value: "$(steps.get-snapshot-images.results.commit)"
+        params:
+          - name: SNAPSHOT
+        steps:
+          - name: get-snapshot-images
+            image: registry.redhat.io/openshift4/ose-cli:latest
+            env:
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+            results:
+              - name: console-image
+                type: string
+                description: "console image from snapshot"
+              - name: commit
+                type: string
+                description: "commit sha to be used in console tests"
+            script: |
+              dnf -y install jq
+              echo -n "$(jq -r --arg component_name "lightspeed-agentic-console" '.components[] | select(.name == $component_name) | .containerImage' <<< "$SNAPSHOT")" > $(step.results.console-image.path)
+              echo -n "$(jq -r --arg component_name "lightspeed-agentic-console" '.components[] | select(.name == $component_name) | .source.git.revision' <<< "$SNAPSHOT")" > $(step.results.commit.path)
+    - name: lint
+      description: Run static checks
+      runAfter:
+        - extract-snapshot-metadata
+      params:
+        - name: commit
+          value: $(tasks.extract-snapshot-metadata.results.commit)
+      taskSpec:
+        params:
+          - name: commit
+        steps:
+          - name: run-lint
+            env:
+              - name: COMMIT_SHA
+                value: $(params.commit)
+            image: mcr.microsoft.com/playwright:v1.60.0-noble
+            resources:
+              limits:
+                memory: 4Gi
+            script: |
+              #!/bin/bash
+              set -euo pipefail
+              cd /home
+              git clone https://github.com/openshift/lightspeed-agentic-console.git
+              cd lightspeed-agentic-console
+              git fetch origin "${COMMIT_SHA}"
+              git config advice.detachedHead false
+              git checkout "${COMMIT_SHA}"
+              echo "---------------------------------------------"
+              echo "node version: $(node -v)"
+              echo "npm version: $(npm -v)"
+              echo "---------------------------------------------"
+              NODE_OPTIONS=--max-old-space-size=4096 npm ci --no-fund
+              echo "---------------------------------------------"
+              npm run lint
+              echo "---------------------------------------------"
+              npm run test
+              echo "---------------------------------------------"
+              npm run i18n
