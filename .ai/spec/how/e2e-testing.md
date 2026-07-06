@@ -1,6 +1,20 @@
-# E2E Testing
+# Testing
 
-## Framework
+## Konflux CI Pipeline
+
+`.tekton/integration-tests/lightspeed-agentic-console-pre-commit.yaml` defines a Tekton
+Pipeline that runs as a Konflux integration test on every PR. It checks out the PR commit
+and runs three checks sequentially:
+
+1. `npm run lint` — ESLint, Prettier, and Stylelint
+2. `npm run test` — unit tests
+3. `npm run i18n` — verifies locale files are up to date
+
+The pipeline uses the Playwright base image (`mcr.microsoft.com/playwright`) for its Node.js
+toolchain and runs with a 4Gi memory limit. It extracts the commit SHA from the Konflux
+SNAPSHOT parameter to check out the exact PR revision.
+
+## E2E Framework
 
 Playwright with `@playwright/test`. Mirrors the setup used by the sibling
 `lightspeed-console` repo.
