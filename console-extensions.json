@@ -18,18 +18,46 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
+      "path": "/lightspeed/audit",
+      "component": { "$codeRef": "AuditPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
       "path": "/lightspeed/configuration",
       "component": { "$codeRef": "ConfigurationPage" }
+    }
+  },
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "lightspeed-agentic-runs",
+      "name": "%plugin__lightspeed-agentic-console-plugin~AI Hub%",
+      "perspective": "admin",
+      "insertAfter": "home"
     }
   },
   {
     "type": "console.navigation/href",
     "properties": {
       "id": "lightspeedruns",
-      "name": "%plugin__lightspeed-agentic-console-plugin~AI Hub%",
+      "name": "%plugin__lightspeed-agentic-console-plugin~Agentic runs%",
       "href": "/lightspeed/runs",
       "perspective": "admin",
-      "section": "administration"
+      "section": "lightspeed-agentic-runs",
+      "startsWith": ["/lightspeed/runs"]
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "lightspeedaudit",
+      "name": "%plugin__lightspeed-agentic-console-plugin~Audit & logs%",
+      "href": "/lightspeed/audit",
+      "perspective": "admin",
+      "section": "lightspeed-agentic-runs"
     }
   }
 ]
