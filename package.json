@@ -79,9 +79,10 @@
     "displayName": "OpenShift Lightspeed Agentic Console Plugin",
     "description": "AI-driven runs UI for OpenShift cluster operations",
     "exposedModules": {
-      "RunListPage": "./components/runs/RunListPage",
+      "AuditPage": "./components/AuditPage",
+      "ConfigurationPage": "./components/configuration/ConfigurationPage",
       "RunDetailPage": "./components/runs/RunDetailPage",
-      "ConfigurationPage": "./components/configuration/ConfigurationPage"
+      "RunListPage": "./components/runs/RunListPage"
     },
     "dependencies": {
       "@console/pluginAPI": ">=4.22.0-0"
