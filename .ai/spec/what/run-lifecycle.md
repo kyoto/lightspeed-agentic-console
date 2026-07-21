@@ -30,6 +30,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 
 10. The detail page MUST gate its content behind a loading/error guard (`StatusGuard`): show a spinner while loading, an error state on failure (403 → restricted access, 404 → not found, other → error message with detail), and the page content when data is ready.
 11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis summary, Remediation options, Execution summary, Verification summary, and Timeline.
+11a. Legal disclaimer banner — persistent info alert below the detail page title/status: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
 12. During in-progress stages (Analyzing, Executing, Verifying), the page MUST show a `StageInProgress` card with embedded live log streaming from the sandbox pod.
 13. The page MUST be wrapped in `AgenticLayout` to display the system-suspended banner when the agentic config has `suspended: true`.
 
@@ -41,6 +42,8 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 16. Approval decisions are written as JSON patches to the `AgenticRunApproval` CR, not to the `AgenticRun` CR.
 17. When approving execution, the user can select a specific remediation option (by index) and specify retry count (0-3). Each option's remediation plan contains concrete bash commands (kubectl/oc) visible in the approval view.
 18. Execution approval uses a `ConfirmationModal` — the user clicks Execute on a remediation option card, which opens a modal dialog for confirmation with loading state and inline error display.
+18a. The execution confirmation modal body includes a legal disclaimer: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
+18b. [PLANNED: OLS-3579] Stop execution button — a red danger button shown on the detail page for all non-terminal phases (not shown for Completed, Failed, Denied, Escalated, EmergencyStopped). Opens a confirmation modal. On confirm, patches the AgenticRun CR to trigger emergency stop. Gated by a dedicated RBAC check (`canEmergencyStop`) for `patch` verb on `agenticruns` in API group `agentic.openshift.io`. The emergency-stop callback MUST guard against `!canEmergencyStop` as defense-in-depth, and the backend MUST enforce matching authorization on the AgenticRun emergency-stop patch endpoint. The per-run stop mechanism does not yet exist on the CRD — backend must define the patch contract ([OLS-3298]).
 19. The user can select which Agent to use for each approval stage. The available agents are fetched from the cluster-scoped Agent CRD list.
 
 ### Remediation Options
@@ -48,6 +51,10 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 20. Analysis produces one or more `RemediationOption` objects, each containing diagnosis, proposed remediation (a concrete script of ordered bash commands using kubectl/oc), RBAC requirements derived from those commands, and a verification plan. Each action in the remediation plan includes `command` (exact bash command), `type` (phase category: pre-check, mutation, wait, post-check), and `description`. [OLS-3441]
 21. When multiple options exist, they are rendered as expandable cards with a "Select this option" button.
 22. RBAC permissions shown in the run are derived from the concrete bash commands in the remediation script and locked at approval time — the UI shows a danger-level alert stating the agent cannot escalate its own privileges. [OLS-3441]
+20a. [PLANNED: OLS-3661] Analysis token count — display the total token count for the full analysis as a badge on the root cause analysis card ("X tokens (analysis)"). This is a single count for the entire analysis. Source field does not yet exist on the CRD.
+20b. Remove the confidence tag from the root cause analysis display.
+20c. [PLANNED: OLS-3579] Remediation execution record — structured record above the execution log showing: selected option, max attempts, "Executed by" username + timestamp from `AgenticRunApproval.spec.approver`.
+20d. [PLANNED: OLS-3579] Download plan button on remediation option cards — verify existing JSON download aligns with design; update if different.
 
 ### Refine Flow [PLANNED]
 
