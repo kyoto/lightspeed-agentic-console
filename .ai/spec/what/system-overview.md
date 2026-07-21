@@ -8,7 +8,7 @@ The OpenShift Lightspeed Agentic Console Plugin is a dynamic plugin that loads i
 
 1. The plugin MUST load into OpenShift Console via the ConsolePlugin CRD and webpack module federation. It does not run standalone.
 2. The plugin MUST register four routes: `/lightspeed/runs` (list), `/lightspeed/runs/:ns/:name` (detail), `/lightspeed/configuration` (settings), and `/lightspeed/audit` (audit & logs).
-3. The plugin MUST add an "AI Hub" navigation section after the Home and Favorites sections of the admin perspective, containing two subnav items: "Agentic runs" (`/lightspeed/runs`) and "Audit & logs" (`/lightspeed/audit`). The configuration page remains a separate route, not a subnav item.
+3. The plugin MUST add an "AI Hub" navigation section after the Compute section of the admin perspective, containing two subnav items: "Agentic runs" (`/lightspeed/runs`) and "Audit & logs" (`/lightspeed/audit`). The configuration page remains a separate route, not a subnav item.
 4. All user-facing strings MUST use the `plugin__lightspeed-agentic-console-plugin` i18n namespace.
 5. All CSS classes MUST be prefixed with `ols-plugin__` to avoid style conflicts with the host console.
 

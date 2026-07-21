@@ -36,7 +36,7 @@
       "id": "lightspeed-agentic-runs",
       "name": "%plugin__lightspeed-agentic-console-plugin~AI Hub%",
       "perspective": "admin",
-      "insertAfter": "home"
+      "insertAfter": "compute"
     }
   },
   {
