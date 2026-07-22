@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import {
+  k8sDelete,
   ListPageBody,
   ListPageFilter,
   ListPageHeader,
@@ -12,6 +13,7 @@ import {
   TableColumn,
   TableData,
   Timestamp,
+  useAccessReview,
   useK8sWatchResource,
   useListPageFilter,
   VirtualizedTable,
@@ -20,12 +22,16 @@ import {
   Button,
   Content,
   ContentVariants,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
   EmptyState,
   EmptyStateBody,
   Icon,
   Label,
+  MenuToggle,
 } from '@patternfly/react-core';
-import { CogIcon, SearchIcon } from '@patternfly/react-icons';
+import { CogIcon, EllipsisVIcon, SearchIcon } from '@patternfly/react-icons';
 import RhUiInformationFillIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-information-fill-icon';
 
 import {
@@ -34,9 +40,11 @@ import {
   derivePhaseFromConditions,
   getPhaseDisplay,
   LightspeedAgenticRunGVK,
+  LightspeedAgenticRunModel,
 } from '../../models/agenticrun';
 import { RUN_LABEL_SOURCE } from '../../constants';
 import AgenticLayout from '../AgenticLayout';
+import { ConfirmationModal } from '../ConfirmationModal';
 import PreviewBadge from '../PreviewBadge';
 
 const getTriggerDomain = (obj: AgenticRunK8s): string =>
@@ -65,36 +73,44 @@ const phaseFilter: RowFilter<AgenticRunK8s> = {
   type: 'run-phase',
 };
 
-const RunRow: React.FC<RowProps<AgenticRunK8s>> = ({ activeColumnIDs, obj }) => {
-  const phase = getPhaseDisplay(
-    derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]),
-  );
-  const detailPath = `/lightspeed/runs/${obj.metadata.namespace}/${obj.metadata.name}`;
-  const requestPreview =
-    obj.spec.request.length > 80 ? `${obj.spec.request.substring(0, 80)}...` : obj.spec.request;
+const RunKebab: React.FC<{
+  obj: AgenticRunK8s;
+  canDelete: boolean;
+  onDelete: (obj: AgenticRunK8s) => void;
+}> = ({ obj, canDelete, onDelete }) => {
+  const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+  const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <>
-      <TableData activeColumnIDs={activeColumnIDs} id="name">
-        <ResourceIcon groupVersionKind={LightspeedAgenticRunGVK} />{' '}
-        <Link to={detailPath}>{obj.metadata.name}</Link>
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="namespace">
-        <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="trigger-domain">
-        {getTriggerDomain(obj) || '-'}
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="phase">
-        <Label color={phase.color}>{phase.label}</Label>
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="request">
-        {requestPreview}
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="age">
-        <Timestamp timestamp={obj.metadata.creationTimestamp} />
-      </TableData>
-    </>
+    <Dropdown
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      popperProps={{ position: 'right' }}
+      toggle={(toggleRef) => (
+        <MenuToggle
+          aria-label={t('Actions for {{name}}', { name: obj.metadata.name })}
+          ref={toggleRef}
+          isExpanded={isOpen}
+          onClick={() => setIsOpen((prev) => !prev)}
+          variant="plain"
+        >
+          <EllipsisVIcon />
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        <DropdownItem
+          isDisabled={!canDelete}
+          key="delete"
+          onClick={() => {
+            setIsOpen(false);
+            onDelete(obj);
+          }}
+        >
+          {t('Delete')}
+        </DropdownItem>
+      </DropdownList>
+    </Dropdown>
   );
 };
 
@@ -130,6 +146,30 @@ const RunListPage: React.FC = () => {
     namespaced: true,
   });
 
+  const [canDelete] = useAccessReview({
+    group: LightspeedAgenticRunModel.apiGroup,
+    resource: LightspeedAgenticRunModel.plural,
+    verb: 'delete',
+  });
+
+  const [deleteTarget, setDeleteTarget] = React.useState<AgenticRunK8s | null>(null);
+  const [deleteError, setDeleteError] = React.useState('');
+  const [deleteInProgress, setDeleteInProgress] = React.useState(false);
+
+  const handleDelete = React.useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleteInProgress(true);
+    setDeleteError('');
+    try {
+      await k8sDelete({ model: LightspeedAgenticRunModel, resource: deleteTarget });
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeleteInProgress(false);
+    }
+  }, [deleteTarget]);
+
   const columns: TableColumn<AgenticRunK8s>[] = React.useMemo(
     () => [
       { id: 'name', sort: 'metadata.name', title: t('Name') },
@@ -156,8 +196,48 @@ const RunListPage: React.FC = () => {
       },
       { id: 'request', title: t('Request') },
       { id: 'age', sort: 'metadata.creationTimestamp', title: t('Created') },
+      { id: '', title: '' },
     ],
     [t],
+  );
+
+  const RunRow = React.useCallback<React.FC<RowProps<AgenticRunK8s>>>(
+    ({ activeColumnIDs, obj }) => {
+      const phase = getPhaseDisplay(
+        derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]),
+      );
+      const detailPath = `/lightspeed/runs/${obj.metadata.namespace}/${obj.metadata.name}`;
+      const requestPreview =
+        obj.spec.request.length > 80 ? `${obj.spec.request.substring(0, 80)}...` : obj.spec.request;
+
+      return (
+        <>
+          <TableData activeColumnIDs={activeColumnIDs} id="name">
+            <ResourceIcon groupVersionKind={LightspeedAgenticRunGVK} />{' '}
+            <Link to={detailPath}>{obj.metadata.name}</Link>
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} id="namespace">
+            <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} id="trigger-domain">
+            {getTriggerDomain(obj) || '-'}
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} id="phase">
+            <Label color={phase.color}>{phase.label}</Label>
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} id="request">
+            {requestPreview}
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} id="age">
+            <Timestamp timestamp={obj.metadata.creationTimestamp} />
+          </TableData>
+          <TableData activeColumnIDs={activeColumnIDs} className="pf-v6-c-table__action" id="">
+            <RunKebab canDelete={canDelete} obj={obj} onDelete={setDeleteTarget} />
+          </TableData>
+        </>
+      );
+    },
+    [canDelete],
   );
 
   const filters: RowFilter<AgenticRunK8s>[] = React.useMemo(() => {
@@ -228,6 +308,21 @@ const RunListPage: React.FC = () => {
           unfilteredData={data}
         />
       </ListPageBody>
+
+      <ConfirmationModal
+        actionLabel={t('Delete')}
+        actionVariant="danger"
+        body={t('Are you sure you want to delete this agentic run? This action cannot be undone.')}
+        error={deleteError}
+        isLoading={deleteInProgress}
+        isOpen={deleteTarget !== null}
+        onAction={handleDelete}
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError('');
+        }}
+        title={t('Delete agentic run')}
+      />
     </AgenticLayout>
   );
 };
