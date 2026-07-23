@@ -19,9 +19,9 @@ const AgenticLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     <>
       {isSuspended && (
         <PageSection hasBodyWrapper={false}>
-          <Alert isInline title={t('Agentic system is suspended')} variant="danger">
+          <Alert isInline title={t('Agentic capabilities disabled')} variant="warning">
             {t(
-              'All operations are halted and new runs will be terminated. Remove or update the AgenticOLSConfig to resume.',
+              'Administrative policy has paused agentic automation on this cluster. Actions and investigations are currently unavailable. Contact your cluster administrator to restore access.',
             )}
           </Alert>
         </PageSection>
