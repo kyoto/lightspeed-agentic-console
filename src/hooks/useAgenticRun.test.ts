@@ -160,7 +160,7 @@ describe('mapRootCause', () => {
     });
   });
 
-  test('prefers top-level diagnosis over option diagnosis', () => {
+  test('prefers option diagnosis over top-level diagnosis', () => {
     const topDiagnosis = {
       summary: 'Top-level diagnosis',
       confidence: 'Medium' as const,
@@ -170,8 +170,22 @@ describe('mapRootCause', () => {
     const analysis = { status: { diagnosis: topDiagnosis, options: [opt] } } as AnalysisResultK8s;
     const result = mapRootCause(analysis);
     expect(result).toEqual({
-      cause: 'Top-level root cause',
-      detail: 'Top-level diagnosis',
+      cause: 'Memory limit too low',
+      detail: 'Pod OOMKilled',
+    });
+  });
+
+  test('falls back to top-level diagnosis when no options exist', () => {
+    const topDiagnosis = {
+      summary: 'No action needed',
+      confidence: 'High' as const,
+      rootCause: 'False alarm',
+    };
+    const analysis = { status: { diagnosis: topDiagnosis } } as AnalysisResultK8s;
+    const result = mapRootCause(analysis);
+    expect(result).toEqual({
+      cause: 'False alarm',
+      detail: 'No action needed',
     });
   });
 });

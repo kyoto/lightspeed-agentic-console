@@ -46,7 +46,7 @@ const mapSandbox = (s?: { claimName?: string; namespace?: string }): SandboxView
 export const mapRootCause = (
   analysis: AnalysisResultK8s | undefined,
 ): RootCauseView | undefined => {
-  const diagnosis = analysis?.status?.diagnosis ?? analysis?.status?.options?.[0]?.diagnosis;
+  const diagnosis = analysis?.status?.options?.[0]?.diagnosis ?? analysis?.status?.diagnosis;
   if (!diagnosis) return undefined;
 
   return {
