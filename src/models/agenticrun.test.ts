@@ -145,17 +145,34 @@ describe('derivePhaseFromConditions', () => {
 });
 
 describe('getPhaseDisplay', () => {
-  it('returns purple label for EmergencyStopped', () => {
-    expect(getPhaseDisplay('EmergencyStopped')).toEqual({
-      color: 'purple',
-      label: 'Emergency Stopped',
+  it.each([
+    ['Pending', { color: 'grey', label: 'Pending' }],
+    ['Analyzing', { color: 'blue', label: 'Analyzing' }],
+    ['Proposed', { color: 'blue', label: 'Proposed' }],
+    ['NoActionRequired', { color: 'green', label: 'No action required' }],
+    ['Executing', { color: 'teal', label: 'Executing' }],
+    ['Verifying', { color: 'teal', label: 'Verifying' }],
+    ['Escalating', { color: 'orange', label: 'Escalating' }],
+    ['Completed', { color: 'green', label: 'Completed' }],
+    ['Failed', { color: 'red', label: 'Failed' }],
+    ['Denied', { color: 'red', label: 'Denied' }],
+    ['Escalated', { color: 'orange', label: 'Escalated' }],
+    ['EmergencyStopped', { color: 'red', label: 'Emergency stopped' }],
+  ])('returns correct display for %s', (phase, expected) => {
+    expect(getPhaseDisplay(phase)).toEqual(expected);
+  });
+
+  it('returns grey with phase as label for unknown phases', () => {
+    expect(getPhaseDisplay('SomeUnknownPhase')).toEqual({
+      color: 'grey',
+      label: 'SomeUnknownPhase',
     });
   });
 
-  it('returns green label for NoActionRequired', () => {
-    expect(getPhaseDisplay('NoActionRequired')).toEqual({
-      color: 'green',
-      label: 'No action required',
+  it('returns grey with Unknown label when phase is undefined', () => {
+    expect(getPhaseDisplay(undefined)).toEqual({
+      color: 'grey',
+      label: 'Unknown',
     });
   });
 });

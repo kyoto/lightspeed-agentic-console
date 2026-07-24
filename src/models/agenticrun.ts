@@ -550,36 +550,36 @@ export type EscalationResultCR = {
 // Display helpers
 
 export type PhaseDisplay = {
-  color: 'grey' | 'blue' | 'teal' | 'orange' | 'purple' | 'green' | 'red' | 'orangered';
+  color: 'blue' | 'green' | 'grey' | 'orange' | 'red' | 'teal';
   label: string;
 };
 
 export const getPhaseDisplay = (phase?: AgenticRunPhase | string): PhaseDisplay => {
   switch (phase) {
-    case 'Pending':
-      return { color: 'grey', label: 'Pending' };
     case 'Analyzing':
       return { color: 'blue', label: 'Analyzing' };
-    case 'Proposed':
-      return { color: 'teal', label: 'Proposed' };
-    case 'NoActionRequired':
-      return { color: 'green', label: 'No action required' };
-    case 'Executing':
-      return { color: 'purple', label: 'Executing' };
-    case 'Verifying':
-      return { color: 'orange', label: 'Verifying' };
-    case 'Escalating':
-      return { color: 'orange', label: 'Escalating' };
     case 'Completed':
       return { color: 'green', label: 'Completed' };
-    case 'Failed':
-      return { color: 'red', label: 'Failed' };
     case 'Denied':
       return { color: 'red', label: 'Denied' };
-    case 'Escalated':
-      return { color: 'orangered', label: 'Escalated' };
     case 'EmergencyStopped':
-      return { color: 'purple', label: 'Emergency Stopped' };
+      return { color: 'red', label: 'Emergency stopped' };
+    case 'Escalated':
+      return { color: 'orange', label: 'Escalated' };
+    case 'Escalating':
+      return { color: 'orange', label: 'Escalating' };
+    case 'Executing':
+      return { color: 'teal', label: 'Executing' };
+    case 'Failed':
+      return { color: 'red', label: 'Failed' };
+    case 'NoActionRequired':
+      return { color: 'green', label: 'No action required' };
+    case 'Pending':
+      return { color: 'grey', label: 'Pending' };
+    case 'Proposed':
+      return { color: 'blue', label: 'Proposed' };
+    case 'Verifying':
+      return { color: 'teal', label: 'Verifying' };
     default:
       return { color: 'grey', label: phase || 'Unknown' };
   }
