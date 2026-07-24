@@ -18,14 +18,6 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/lightspeed/audit",
-      "component": { "$codeRef": "AuditPage" }
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
       "path": "/lightspeed/configuration",
       "component": { "$codeRef": "ConfigurationPage" }
     }
@@ -48,16 +40,6 @@
       "perspective": "admin",
       "section": "lightspeed-agentic-runs",
       "startsWith": ["/lightspeed/runs"]
-    }
-  },
-  {
-    "type": "console.navigation/href",
-    "properties": {
-      "id": "lightspeedaudit",
-      "name": "%plugin__lightspeed-agentic-console-plugin~Audit & logs%",
-      "href": "/lightspeed/audit",
-      "perspective": "admin",
-      "section": "lightspeed-agentic-runs"
     }
   }
 ]
