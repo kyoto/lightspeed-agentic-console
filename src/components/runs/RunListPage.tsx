@@ -206,6 +206,7 @@ const RunListPage: React.FC = () => {
 
   const RunRow = React.useCallback<React.FC<RowProps<AgenticRunK8s>>>(
     ({ activeColumnIDs, obj }) => {
+      const triggerDomain = getTriggerDomain(obj);
       const phase = getPhaseDisplay(
         derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]),
       );
@@ -220,7 +221,7 @@ const RunListPage: React.FC = () => {
             <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="trigger-domain">
-            {getTriggerDomain(obj) || '-'}
+            {triggerDomain ? <Label variant="outline">{triggerDomain}</Label> : '-'}
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="phase">
             <Label color={phase.color}>{phase.label}</Label>
