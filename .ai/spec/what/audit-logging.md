@@ -22,5 +22,5 @@ Implementation spec for compliance audit logging support in the agentic console.
 
 ## Cross-References
 
-- `run-lifecycle.md` — approval flow UI (rules 15-18)
+- `run-lifecycle.md` — approval flow UI (rules 15-19)
 - `configuration.md` — configuration UI (no audit changes needed)
