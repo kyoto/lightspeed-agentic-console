@@ -68,7 +68,7 @@ K8s intersection types (e.g., `ProposalK8s = LightspeedProposal & K8sResourceCom
 ### Approval Logic
 
 Approval logic is embedded in the `useProposal` hook — a single hook instance per detail page. It exposes:
-- Read: `canApprove` / `canApproveLoading` → derived from `useAccessReview` on `proposalapprovals`
+- Read: `canApprove` / `canApproveLoading` → derived from `useAccessReview` on `agenticrunapprovals`
 - Write: `approveExecution(optionIndex, maxRetries)` / `denyExecution()` → `k8sPatch` with patches from `buildApprovalPatch`
 - State helpers: `stageNeedsApproval()` and `getStageStatus()` from `src/utils/approval.ts` are used internally
 

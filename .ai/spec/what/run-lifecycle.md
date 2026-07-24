@@ -7,14 +7,16 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 ### Phase Derivation
 
 1. The plugin MUST derive the run phase from `status.conditions[]`, not from a stored phase field. The function `derivePhaseFromConditions` implements this logic and MUST match the operator's `DerivePhase` in `lightspeed-agentic-operator/api/v1alpha1/proposal_types.go`.
-2. Phase derivation follows condition priority: EmergencyStopped > Escalated > Denied > Verified > Executed > Analyzed > Pending.
+2. Phase derivation follows condition priority: EmergencyStopped > Escalated > Denied > Verified > Executed > Analyzed > Pending. Within the `Analyzed` condition, if the reason is `NoActionRequired`, the run maps to the `NoActionRequired` phase instead of `Proposed`.
 3. Within each condition, `status: True` means the stage completed successfully, `status: Unknown` means the stage is in progress, and `status: False` means the stage failed (unless a specific `reason` indicates retry).
 4. The `Verified` condition with reason `RetryingExecution` maps to the `Executing` phase (not `Failed`).
 
 ### Run Phases
 
-5. Valid phases are: Pending, Analyzing, Proposed, Executing, Verifying, Escalating, Completed, Failed, Denied, Escalated, EmergencyStopped.
-6. Terminal phases are: Completed, Failed, Denied, Escalated, EmergencyStopped. No approval actions are shown for terminal runs.
+5. Valid phases are: Pending, Analyzing, Proposed, Executing, Verifying, Escalating, Completed, Failed, Denied, Escalated, EmergencyStopped, NoActionRequired.
+6. Terminal phases are: Completed, Failed, Denied, Escalated, EmergencyStopped, NoActionRequired. No approval actions are shown for terminal runs.
+6a. A run enters `EmergencyStopped` when the operator triggers an emergency halt (e.g., security policy violation). The console displays it as a terminal error state with no approve/deny controls. No user action is possible.
+6b. When a run is in the `NoActionRequired` phase, the console displays the diagnosis from the `Analyzed` condition without any remediation proposal or approve/deny controls. The run is complete — no user action is needed or available.
 
 ### Run List
 
