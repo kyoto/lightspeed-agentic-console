@@ -46,6 +46,7 @@ import { RUN_LABEL_SOURCE } from '../../constants';
 import AgenticLayout from '../AgenticLayout';
 import { ConfirmationModal } from '../ConfirmationModal';
 import PreviewBadge from '../PreviewBadge';
+import AgenticCapabilitiesToggle from './AgenticCapabilitiesToggle';
 
 const getTriggerDomain = (obj: AgenticRunK8s): string =>
   obj.metadata?.labels?.[RUN_LABEL_SOURCE] || '';
@@ -285,6 +286,7 @@ const RunListPage: React.FC = () => {
         </Button>
       </ListPageHeader>
       <ListPageBody>
+        <AgenticCapabilitiesToggle />
         <ListPageFilter
           data={data}
           loaded={loaded}
