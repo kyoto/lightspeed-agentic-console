@@ -35,6 +35,8 @@ export interface RemediationOptionView {
   rollbackCommand?: string;
   verificationDescription?: string;
   verificationSteps?: VerificationStepView[];
+  cause: string;
+  detail: string;
 }
 
 export interface TimelineEvent {

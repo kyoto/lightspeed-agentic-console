@@ -31,7 +31,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 ### Run Detail — Layout
 
 10. The detail page MUST gate its content behind a loading/error guard (`StatusGuard`): show a spinner while loading, an error state on failure (403 → restricted access, 404 → not found, other → error message with detail), and the page content when data is ready.
-11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis summary, Remediation options, Execution summary, Verification summary, and Timeline.
+11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis request, Remediation options, Execution summary, Verification summary, and Timeline.
 11a. Legal disclaimer banner — persistent info alert below the detail page title/status: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
 12. During in-progress stages (Analyzing, Executing, Verifying), the page MUST show a `StageInProgress` card with embedded live log streaming from the sandbox pod.
 13. The page MUST be wrapped in `AgenticLayout` to display the system-suspended banner when the agentic config has `suspended: true`.
@@ -57,6 +57,8 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 19b. Remove the confidence tag from the root cause analysis display.
 19c. [PLANNED: OLS-3579] Remediation execution record — structured record above the execution log showing: selected option, max attempts, "Executed by" username + timestamp from `AgenticRunApproval.spec.approver`.
 19d. [PLANNED: OLS-3579] Download plan button on remediation option cards — verify existing JSON download aligns with design; update if different.
+19e. The "Analysis request" section displays the original prompt or alert event string that initiated the run, with a help popover explaining its purpose. Below it, the analysis sandbox log viewer is available when the sandbox has run.
+19f. When remediation options exist, root cause analysis is displayed within each remediation option card. Each card shows the detected cause and detail, alongside estimated impact, proposed agent commands, rollback plan, and verification steps. When no remediation options are available, root cause analysis is shown below the analysis request section.
 
 ### Refine Flow [PLANNED]
 

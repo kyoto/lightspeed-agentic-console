@@ -4,29 +4,29 @@
 
 | File/Directory | Key Symbols | Responsibility |
 |---|---|---|
-| `src/models/proposal.ts` | All K8sModel definitions, GVK constants, CRD types, `derivePhaseFromConditions`, `getPhaseDisplay` | Central type definitions and phase logic |
+| `src/models/agenticrun.ts` | All K8sModel definitions, GVK constants, CRD types, `derivePhaseFromConditions`, `getPhaseDisplay` | Central type definitions and phase logic |
 | `src/config.ts` | `getApiUrl` | API proxy URL construction |
 | `src/utils/approval.ts` | `findStage`, `getStageStatus`, `stageNeedsApproval`, `buildApprovalPatch` | Pure functions for approval logic |
 | `src/utils/markdown.ts` | `renderMarkdown`, `renderMarkdownInline` | Low-level sanitized markdown rendering (marked + DOMPurify). `renderMarkdown` emits block HTML via `marked.parse`; `renderMarkdownInline` emits inline HTML via `marked.parseInline`. All links are hardened with `target="_blank" rel="noopener noreferrer"`. Prefer `MarkdownContent` component over direct calls. |
 | `src/utils/proposal-utils.ts` | `buildPodLogUrl`, `getOutcomeStatus`, `getReversibilityColor` | Helpers for pod log URLs, outcome status mapping, reversibility colors |
-| `src/components/proposals/ProposalListPage.tsx` | `ProposalListPage` | Proposal list with virtualized table and phase filters |
-| `src/components/proposals/ProposalDetailPage.tsx` | `ProposalDetailsPage` | Section-based proposal detail page, delegates to `detail/` subcomponents |
-| `src/components/proposals/detail/AnalysisSummary.tsx` | `AnalysisSummary` | Root cause display, analysis loading/streaming state |
-| `src/components/proposals/detail/RemediationOptionCard.tsx` | `RemediationOptionCard` | Expandable remediation option card |
-| `src/components/proposals/detail/ExecutionSummary.tsx` | `ExecutionSummary` | Post-execution actions and outcome display |
-| `src/components/proposals/detail/VerificationSummary.tsx` | `VerificationSummary` | Verification checks and summary |
-| `src/components/proposals/detail/ProposalPhaseLabel.tsx` | `ProposalPhaseLabel` | Phase label with status color |
-| `src/components/proposals/detail/ProposalTimeline.tsx` | `ProposalTimeline` | Chronological event timeline |
-| `src/components/proposals/detail/StageInProgress.tsx` | `StageInProgress` | In-progress stage card with embedded log viewer |
-| `src/components/proposals/detail/SandboxLogViewer.tsx` | `SandboxLogViewer` | Expandable log viewer with streaming and search |
+| `src/components/runs/RunListPage.tsx` | `RunListPage` | Run list with virtualized table and phase filters |
+| `src/components/runs/RunDetailPage.tsx` | `RunDetailPage` | Section-based run detail page, delegates to `detail/` subcomponents |
+| `src/components/runs/detail/AnalysisSummary.tsx` | `AnalysisSummary` | Analysis request display, analysis loading/streaming state |
+| `src/components/runs/detail/RemediationOptionCard.tsx` | `RemediationOptionCard` | Expandable remediation option card with embedded root cause analysis |
+| `src/components/runs/detail/ExecutionSummary.tsx` | `ExecutionSummary` | Post-execution actions and outcome display |
+| `src/components/runs/detail/VerificationSummary.tsx` | `VerificationSummary` | Verification checks and summary |
+| `src/components/runs/detail/RunPhaseLabel.tsx` | `RunPhaseLabel` | Phase label with status color |
+| `src/components/runs/detail/RunTimeline.tsx` | `RunTimeline` | Chronological event timeline |
+| `src/components/runs/detail/StageInProgress.tsx` | `StageInProgress` | In-progress stage card with embedded log viewer |
+| `src/components/runs/detail/SandboxLogViewer.tsx` | `SandboxLogViewer` | Expandable log viewer with streaming and search |
 | `src/components/AgenticLayout.tsx` | `AgenticLayout` | Watches `AgenticOLSConfig` CR; renders a system-suspended danger banner above page content when `spec.suspended` is true |
 | `src/components/MarkdownContent.tsx` | `MarkdownContent` | Reusable component for rendering sanitized markdown. Wraps `renderMarkdown`/`renderMarkdownInline` with a block-level container (defaults to PatternFly `Content` div). Props: `text` (markdown string), `component` (wrapper element, default `Content`), `inline` (use inline parser for short text like titles). Prevents invalid nested HTML by binding the parse mode to the correct container. |
 | `src/components/CodeBlockWithClipboard.tsx` | `CodeBlockWithClipboard` | Reusable code block with clipboard copy button and expandable truncation for long content |
 | `src/components/ConfirmationModal.tsx` | `ConfirmationModal` | Reusable confirmation modal with confirm/cancel actions, loading state, and inline error display |
 | `src/components/StatusGuard.tsx` | `StatusGuard` | Loading/error/empty gate using PatternFly `ErrorState`; replaces internal console `StatusBox` |
-| `src/models/proposal-views.ts` | `ProposalView`, `RemediationOptionView`, `ExecutionView`, `VerificationView`, `SandboxView`, `TimelineEvent`, `TERMINAL_PHASES` | View-model types for the detail page (output of `useProposal` mapping layer) |
+| `src/models/agenticrun-views.ts` | `AgenticRunView`, `RemediationOptionView`, `ExecutionView`, `VerificationView`, `SandboxView`, `TimelineEvent`, `TERMINAL_PHASES` | View-model types for the detail page (output of `useAgenticRun` mapping layer) |
 | `src/constants.ts` | `PROPOSAL_NAMESPACE`, `PROPOSAL_LABEL_SOURCE`, `RESULT_LABEL_PROPOSAL` | Shared constants for K8s label keys and namespace |
-| `src/hooks/useProposal.ts` | `useProposal`, `mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapTimeline`, `filterLatest` | Fetches proposal + result CRs, maps API types → view types |
+| `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapTimeline`, `filterLatest` | Fetches run + result CRs, maps API types → view types |
 | `src/hooks/useExecutionLogActions.ts` | `useExecutionLogActions` | Parses execution actions from sandbox pod logs |
 | `src/hooks/useSandboxLogStream.ts` | `useSandboxLogStream` | Streams audit lines from sandbox pod logs |
 | `src/components/configuration/ConfigurationPage.tsx` | `ConfigurationPage` | Configuration page with tabbed layout |
@@ -49,14 +49,14 @@
 
 The plugin has no traditional `main` entry point. Webpack's `ConsoleRemotePlugin` generates entry points from `console-extensions.json`. The three exposed modules are:
 
-1. `ProposalListPage` → `src/components/proposals/ProposalListPage.tsx`
-2. `ProposalDetailPage` → `src/components/proposals/ProposalDetailPage.tsx`
+1. `RunListPage` → `src/components/runs/RunListPage.tsx`
+2. `RunDetailPage` → `src/components/runs/RunDetailPage.tsx`
 3. `ConfigurationPage` → `src/components/configuration/ConfigurationPage.tsx`
 
 ## Naming Conventions
 
 - Components: PascalCase `.tsx` files, one primary component per file, default export.
 - CSS: co-located `.css` files alongside components. All classes prefixed `ols-plugin__`.
-- Models: `proposal.ts` contains all CRD types and K8s intersection types. `proposal-views.ts` contains view-model types (`*View` suffix) for the detail page.
+- Models: `agenticrun.ts` contains all CRD types and K8s intersection types. `agenticrun-views.ts` contains view-model types (`*View` suffix) for the detail page.
 - Hooks: `use` prefix, one hook per file in `src/hooks/`.
-- Detail subcomponents: each section of the detail page is a separate component in `src/components/proposals/detail/`, imported by `ProposalDetailPage.tsx`.
+- Detail subcomponents: each section of the detail page is a separate component in `src/components/runs/detail/`, imported by `RunDetailPage.tsx`.

@@ -138,85 +138,131 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
       </CardHeader>
       {isExpanded && (
         <CardBody>
-          <MarkdownContent text={option.description} />
+          <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+            <FlexItem>
+              <MarkdownContent text={option.description} />
+            </FlexItem>
 
-          <Flex gap={{ default: 'gapLg' }} direction={{ default: 'column' }}>
-            {option.estimatedImpact && (
-              <FlexItem>
-                <Title headingLevel="h6">{t('Estimated impact')}</Title>
-                <MarkdownContent text={option.estimatedImpact} />
-              </FlexItem>
-            )}
-
-            {option.actions && option.actions.length > 0 && (
-              <FlexItem>
-                <Title headingLevel="h6">{t('Remediation script')}</Title>
-                <Content component="ol">
-                  {option.actions.map((action, i) => (
-                    <Content component="li" key={i}>
-                      <Label variant="outline" isCompact>
-                        {action.type}
-                      </Label>{' '}
-                      <MarkdownContent text={action.description} />
-                      {action.command && <CodeBlockWithClipboard code={action.command} />}
-                    </Content>
-                  ))}
-                </Content>
-              </FlexItem>
-            )}
-
-            {(option.rollbackDescription || option.rollbackCommand) && (
-              <FlexItem>
-                <Title headingLevel="h6">{t('Rollback plan')}</Title>
-                {option.rollbackDescription && (
-                  <MarkdownContent text={option.rollbackDescription} />
-                )}
-                {option.rollbackCommand && <CodeBlockWithClipboard code={option.rollbackCommand} />}
-              </FlexItem>
-            )}
-
-            {option.verificationSteps && option.verificationSteps.length > 0 && (
-              <FlexItem>
-                <Title headingLevel="h6">{t('Verification steps')}</Title>
-                {option.verificationDescription && (
-                  <MarkdownContent text={option.verificationDescription} />
-                )}
-                <DescriptionList>
-                  {option.verificationSteps.map((step, i) => (
-                    <DescriptionListGroup key={i}>
-                      <DescriptionListTerm>{step.name}</DescriptionListTerm>
-                      <DescriptionListDescription>
-                        {step.command && <CodeBlockWithClipboard code={step.command} />}
-                        {step.expected && (
-                          <Content component={ContentVariants.small}>
-                            {t('Expected')}: {step.expected}
-                          </Content>
-                        )}
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
-                  ))}
-                </DescriptionList>
-              </FlexItem>
+            {(option.cause || option.detail) && (
+              <>
+                <FlexItem>
+                  <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                    {t('Root cause analysis')}
+                  </Title>
+                </FlexItem>
+                <FlexItem>
+                  <Card>
+                    <CardBody>
+                      <MarkdownContent text={option.cause} />
+                      <MarkdownContent text={option.detail} />
+                    </CardBody>
+                  </Card>
+                </FlexItem>
+              </>
             )}
 
             <FlexItem>
-              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                {onExecute && (
+              <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+                {option.estimatedImpact && (
                   <FlexItem>
-                    <ApprovalGatedButton
-                      canApprove={canApprove}
-                      canApproveLoading={canApproveLoading}
-                      mutationInProgress={mutationInProgress}
-                      onClick={onExecute}
-                    >
-                      {t('Execute remediation')}
-                    </ApprovalGatedButton>
+                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                      {t('Estimated impact')}
+                    </Title>
+                    <MarkdownContent text={option.estimatedImpact} />
                   </FlexItem>
                 )}
+
+                {option.actions && option.actions.length > 0 && (
+                  <FlexItem>
+                    <Flex
+                      spaceItems={{ default: 'spaceItemsMd' }}
+                      direction={{ default: 'column' }}
+                    >
+                      <FlexItem>
+                        <Title
+                          headingLevel="h6"
+                          className="ols-plugin__remediation-card-header--title"
+                        >
+                          {t('Proposed Agent Command', { count: option.actions.length })}
+                        </Title>
+                      </FlexItem>
+                      <FlexItem>
+                        <Content component="ol">
+                          {option.actions.map((action, i) => (
+                            <Content component="li" key={i}>
+                              <Label variant="outline" isCompact>
+                                {action.type}
+                              </Label>{' '}
+                              <MarkdownContent text={action.description} />
+                              {action.command && <CodeBlockWithClipboard code={action.command} />}
+                            </Content>
+                          ))}
+                        </Content>
+                      </FlexItem>
+                    </Flex>
+                  </FlexItem>
+                )}
+
+                {(option.rollbackDescription || option.rollbackCommand) && (
+                  <FlexItem>
+                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                      {t('Rollback Plan')}
+                    </Title>
+                    {option.rollbackDescription && (
+                      <MarkdownContent text={option.rollbackDescription} />
+                    )}
+                    {option.rollbackCommand && (
+                      <CodeBlockWithClipboard code={option.rollbackCommand} />
+                    )}
+                  </FlexItem>
+                )}
+
+                {option.verificationSteps && option.verificationSteps.length > 0 && (
+                  <FlexItem>
+                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                      {t('Verification steps')}
+                    </Title>
+                    {option.verificationDescription && (
+                      <MarkdownContent text={option.verificationDescription} />
+                    )}
+                    <DescriptionList>
+                      {option.verificationSteps.map((step, i) => (
+                        <DescriptionListGroup key={i}>
+                          <DescriptionListTerm>{step.name}</DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {step.command && <CodeBlockWithClipboard code={step.command} />}
+                            {step.expected && (
+                              <Content component={ContentVariants.small}>
+                                {t('Expected')}: {step.expected}
+                              </Content>
+                            )}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      ))}
+                    </DescriptionList>
+                  </FlexItem>
+                )}
+
                 <FlexItem>
-                  <Button variant="link" icon={<DownloadIcon />} onClick={handleDownloadPlan}>
-                    {t('Download plan')}
-                  </Button>
+                  <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    {onExecute && (
+                      <FlexItem>
+                        <ApprovalGatedButton
+                          canApprove={canApprove}
+                          canApproveLoading={canApproveLoading}
+                          mutationInProgress={mutationInProgress}
+                          onClick={onExecute}
+                        >
+                          {t('Execute remediation')}
+                        </ApprovalGatedButton>
+                      </FlexItem>
+                    )}
+                    <FlexItem>
+                      <Button variant="link" icon={<DownloadIcon />} onClick={handleDownloadPlan}>
+                        {t('Download plan')}
+                      </Button>
+                    </FlexItem>
+                  </Flex>
                 </FlexItem>
               </Flex>
             </FlexItem>

@@ -204,6 +204,8 @@ describe('mapOption', () => {
       actions: [{ type: 'patch', description: 'Patch deployment' }],
       rollbackDescription: 'Revert memory limit',
       rollbackCommand: 'kubectl rollout undo',
+      cause: 'Memory limit too low',
+      detail: 'Pod OOMKilled',
     });
   });
 

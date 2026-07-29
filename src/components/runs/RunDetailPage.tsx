@@ -5,6 +5,7 @@ import {
   Alert,
   Breadcrumb,
   BreadcrumbItem,
+  Button,
   Card,
   CardBody,
   Content,
@@ -17,10 +18,11 @@ import {
   Label,
   PageGroup,
   PageSection,
+  Popover,
   Skeleton,
   Title,
 } from '@patternfly/react-core';
-import { InfoCircleIcon } from '@patternfly/react-icons';
+import { InfoCircleIcon, OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import type { FC, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
@@ -338,11 +340,6 @@ const RunDetailPage: FC = () => {
                     {t('Created')} <Timestamp simple timestamp={run?.metadata?.creationTimestamp} />
                   </Content>
                 </FlexItem>
-                {view?.request && (
-                  <FlexItem>
-                    <Content component={ContentVariants.p}>{view.request}</Content>
-                  </FlexItem>
-                )}
               </Flex>
             </Content>
 
@@ -372,15 +369,40 @@ const RunDetailPage: FC = () => {
               </Flex>
             </small>
 
-            <Title headingLevel="h4">{t('Root cause analysis (RCA)')}</Title>
+            <Flex spaceItems={{ default: 'spaceItemsXs' }}>
+              <FlexItem>
+                <Title headingLevel="h4">{t('Analysis request')}</Title>
+              </FlexItem>
+              <FlexItem>
+                <Popover
+                  aria-label="Analysis request info"
+                  headerContent={<div>{t('Analysis request')}</div>}
+                  bodyContent={
+                    <div>
+                      {t(
+                        'The original prompt or alert event string sent to the AI agent to initiate analysis.',
+                      )}
+                    </div>
+                  }
+                >
+                  <Button
+                    aria-label="Analysis request info"
+                    icon={<OutlinedQuestionCircleIcon />}
+                    variant="plain"
+                  />
+                </Popover>
+              </FlexItem>
+            </Flex>
             {!resultsLoaded ? (
-              <Skeleton screenreaderText={t('Loading root cause analysis')} />
+              <Skeleton screenreaderText={t('Loading analysis request')} />
             ) : view ? (
               <AnalysisSummary
-                rootCause={view.rootCause}
+                analysisRequest={view.request}
                 phase={view.phase}
                 analysisSandbox={view.analysisSandbox}
                 analysisStartedAt={view.analysisStartedAt}
+                hasRemediationOptions={view.options.length > 0}
+                rootCause={view.rootCause}
               />
             ) : null}
 

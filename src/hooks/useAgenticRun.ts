@@ -69,6 +69,8 @@ export const mapOption = (opt: RemediationOption, index: number): RemediationOpt
     rollbackCommand: rollback?.command,
     verificationDescription: opt.verification?.description,
     verificationSteps: opt.verification?.steps,
+    cause: opt.diagnosis?.rootCause ?? '',
+    detail: opt.diagnosis?.summary ?? '',
   };
 };
 
