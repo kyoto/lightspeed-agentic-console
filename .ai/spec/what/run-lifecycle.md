@@ -6,7 +6,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 
 ### Phase Derivation
 
-1. The plugin MUST derive the run phase from `status.conditions[]`, not from a stored phase field. The function `derivePhaseFromConditions` implements this logic and MUST match the operator's `DerivePhase` in `lightspeed-agentic-operator/api/v1alpha1/proposal_types.go`.
+1. The plugin MUST derive the run phase from `status.conditions[]`, not from a stored phase field. The function `derivePhaseFromConditions` implements this logic and MUST match the operator's `DerivePhase` in `lightspeed-agentic-operator/api/v1alpha1/agenticrun_types.go`.
 2. Phase derivation follows condition priority: EmergencyStopped > Escalated > Denied > Verified > Executed > Analyzed > Pending. Within the `Analyzed` condition, if the reason is `NoActionRequired`, the run maps to the `NoActionRequired` phase instead of `Proposed`.
 3. Within each condition, `status: True` means the stage completed successfully, `status: Unknown` means the stage is in progress, and `status: False` means the stage failed (unless a specific `reason` indicates retry).
 4. The `Verified` condition with reason `RetryingExecution` maps to the `Executing` phase (not `Failed`).
@@ -38,44 +38,44 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 
 ### Approval Flow
 
-15. Each stage (Analysis, Execution, Verification, Escalation) can independently require approval based on the `AgenticRunApproval` CR.
-15a. **Authorization gate.** Before rendering Approve/Deny buttons, the plugin MUST perform a `useAccessReview` check for `patch` verb on `agenticrunapprovals` resource in API group `agentic.openshift.io`. The namespace MUST fall back from `approval.metadata.namespace` to the run's `metadata.namespace` when the approval CR has not loaded yet. If the user lacks the permission, the buttons MUST be disabled (using `isAriaDisabled` so hover/focus events remain active for the tooltip) with a tooltip stating "You must be a member of system:cluster-admins to approve or deny runs." This check is performed in the `useProposal` hook and exposed as `canApprove`/`canApproveLoading` on the returned view model. The `RemediationOptionCard` component receives `canApprove` as a prop to gate its Execute/Deny buttons, and `ConfirmationModal` is used for execution confirmation. The `approveExecution()` and `denyExecution()` callbacks in `useProposal` MUST also guard against `!canApprove` as defense-in-depth. This prevents confusing 403 errors — the API server enforces the real gate.
-15b. [PLANNED: OLS-3688] **Stage approval gates.** When any stage requires manual approval, the detail page MUST show an approval prompt with "Approve [stage]" (primary) and "Deny" (secondary, danger) buttons in place of the normal in-progress or skeleton UI for that stage. Both buttons MUST be permission-gated and require confirmation. Denying any stage terminates the entire run; the deny confirmation modal MUST communicate this. The plugin determines whether a stage needs manual approval from the `AgenticRunApproval` CR alone — when the `ApprovalPolicy` sets a stage to `Automatic`, the operator pre-populates the corresponding entry in `approval.spec.stages[]` at creation time, so a missing entry indicates manual approval is required. Currently only Execution has approve/deny buttons (shown in the `Proposed` phase); this rule extends the same pattern to Analysis, Verification, and Escalation.
-16. Approval decisions are written as JSON patches to the `AgenticRunApproval` CR, not to the `AgenticRun` CR.
-17. When approving execution, the user can select a specific remediation option (by index) and specify retry count (0-3). Each option's remediation plan contains concrete bash commands (kubectl/oc) visible in the approval view.
-18. Execution approval uses a `ConfirmationModal` — the user clicks Execute on a remediation option card, which opens a modal dialog for confirmation with loading state and inline error display.
-18a. The execution confirmation modal body includes a legal disclaimer: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
-18b. [PLANNED: OLS-3579] Stop execution button — a red danger button shown on the detail page for all non-terminal phases (not shown for Completed, Failed, Denied, Escalated, EmergencyStopped). Opens a confirmation modal. On confirm, patches the AgenticRun CR to trigger emergency stop. Gated by a dedicated RBAC check (`canEmergencyStop`) for `patch` verb on `agenticruns` in API group `agentic.openshift.io`. The emergency-stop callback MUST guard against `!canEmergencyStop` as defense-in-depth, and the backend MUST enforce matching authorization on the AgenticRun emergency-stop patch endpoint. The per-run stop mechanism does not yet exist on the CRD — backend must define the patch contract ([OLS-3298]).
-19. The user can select which Agent to use for each approval stage. The available agents are fetched from the cluster-scoped Agent CRD list.
+14. Each stage (Analysis, Execution, Verification, Escalation) can independently require approval based on the `AgenticRunApproval` CR.
+14a. **Authorization gate.** Before rendering Approve/Deny buttons, the plugin MUST perform a `useAccessReview` check for `patch` verb on `agenticrunapprovals` resource in API group `agentic.openshift.io`. The namespace MUST fall back from `approval.metadata.namespace` to the run's `metadata.namespace` when the approval CR has not loaded yet. If the user lacks the permission, the buttons MUST be disabled (using `isAriaDisabled` so hover/focus events remain active for the tooltip) with a tooltip stating "You must be a member of system:cluster-admins to approve or deny runs." This check is performed in the `useProposal` hook and exposed as `canApprove`/`canApproveLoading` on the returned view model. The `RemediationOptionCard` component receives `canApprove` as a prop to gate its Execute/Deny buttons, and `ConfirmationModal` is used for execution confirmation. The `approveExecution()` and `denyExecution()` callbacks in `useProposal` MUST also guard against `!canApprove` as defense-in-depth. This prevents confusing 403 errors — the API server enforces the real gate.
+14b. [PLANNED: OLS-3688] **Stage approval gates.** When any stage requires manual approval, the detail page MUST show an approval prompt with "Approve [stage]" (primary) and "Deny" (secondary, danger) buttons in place of the normal in-progress or skeleton UI for that stage. Both buttons MUST be permission-gated and require confirmation. Denying any stage terminates the entire run; the deny confirmation modal MUST communicate this. The plugin determines whether a stage needs manual approval from the `AgenticRunApproval` CR alone — when the `ApprovalPolicy` sets a stage to `Automatic`, the operator pre-populates the corresponding entry in `approval.spec.stages[]` at creation time, so a missing entry indicates manual approval is required. Currently only Execution has approve/deny buttons (shown in the `Proposed` phase); this rule extends the same pattern to Analysis, Verification, and Escalation.
+15. Approval decisions are written as JSON patches to the `AgenticRunApproval` CR, not to the `AgenticRun` CR.
+16. When approving execution, the user can select a specific remediation option (by index) and specify retry count (0-3). Each option's remediation plan contains concrete bash commands (kubectl/oc) visible in the approval view.
+17. Execution approval uses a `ConfirmationModal` — the user clicks Execute on a remediation option card, which opens a modal dialog for confirmation with loading state and inline error display.
+17a. The execution confirmation modal body includes a legal disclaimer: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
+17b. [PLANNED: OLS-3579] Stop execution button — a red danger button shown on the detail page for all non-terminal phases (not shown for Completed, Failed, Denied, Escalated, EmergencyStopped). Opens a confirmation modal. On confirm, patches the AgenticRun CR to trigger emergency stop. Gated by a dedicated RBAC check (`canEmergencyStop`) for `patch` verb on `agenticruns` in API group `agentic.openshift.io`. The emergency-stop callback MUST guard against `!canEmergencyStop` as defense-in-depth, and the backend MUST enforce matching authorization on the AgenticRun emergency-stop patch endpoint. The per-run stop mechanism does not yet exist on the CRD — backend must define the patch contract ([OLS-3298]).
+18. The user can select which Agent to use for each approval stage. The available agents are fetched from the cluster-scoped Agent CRD list.
 
 ### Remediation Options
 
-20. Analysis produces one or more `RemediationOption` objects, each containing diagnosis, proposed remediation (a concrete script of ordered bash commands using kubectl/oc), RBAC requirements derived from those commands, and a verification plan. Each action in the remediation plan includes `command` (exact bash command), `type` (phase category: pre-check, mutation, wait, post-check), and `description`. [OLS-3441]
-21. When multiple options exist, they are rendered as expandable cards with a "Select this option" button.
-22. RBAC permissions shown in the run are derived from the concrete bash commands in the remediation script and locked at approval time — the UI shows a danger-level alert stating the agent cannot escalate its own privileges. [OLS-3441]
-20a. [PLANNED: OLS-3661] Analysis token count — display the total token count for the full analysis as a badge on the root cause analysis card ("X tokens (analysis)"). This is a single count for the entire analysis. Source field does not yet exist on the CRD.
-20b. Remove the confidence tag from the root cause analysis display.
-20c. [PLANNED: OLS-3579] Remediation execution record — structured record above the execution log showing: selected option, max attempts, "Executed by" username + timestamp from `AgenticRunApproval.spec.approver`.
-20d. [PLANNED: OLS-3579] Download plan button on remediation option cards — verify existing JSON download aligns with design; update if different.
+19. Analysis produces one or more `RemediationOption` objects, each containing diagnosis, proposed remediation (a concrete script of ordered bash commands using kubectl/oc), RBAC requirements derived from those commands, and a verification plan. Each action in the remediation plan includes `command` (exact bash command), `type` (phase category: pre-check, mutation, wait, post-check), and `description`. [OLS-3441]
+20. When multiple options exist, they are rendered as expandable cards with a "Select this option" button.
+21. RBAC permissions shown in the run are derived from the concrete bash commands in the remediation script and locked at approval time — the UI shows a danger-level alert stating the agent cannot escalate its own privileges. [OLS-3441]
+19a. [PLANNED: OLS-3661] Analysis token count — display the total token count for the full analysis as a badge on the root cause analysis card ("X tokens (analysis)"). This is a single count for the entire analysis. Source field does not yet exist on the CRD.
+19b. Remove the confidence tag from the root cause analysis display.
+19c. [PLANNED: OLS-3579] Remediation execution record — structured record above the execution log showing: selected option, max attempts, "Executed by" username + timestamp from `AgenticRunApproval.spec.approver`.
+19d. [PLANNED: OLS-3579] Download plan button on remediation option cards — verify existing JSON download aligns with design; update if different.
 
 ### Refine Flow [PLANNED]
 
-23. [PLANNED] After analysis completes, the user can submit revision feedback via a "Refine" button. The `revisionFeedback` field exists in the CRD type definition but no UI component currently renders the Refine button.
-24. [PLANNED] Refinement writes `spec.revisionFeedback` to the `AgenticRun` CR via patch. If the value already exists, it uses `replace`; otherwise `add`.
-25. [PLANNED] A revision is considered pending when `spec.revisionFeedback` is set AND `metadata.generation` exceeds the `observedGeneration` on the `Analyzed` condition.
+22. [PLANNED] After analysis completes, the user can submit revision feedback via a "Refine" button. The `revisionFeedback` field exists in the CRD type definition but no UI component currently renders the Refine button.
+23. [PLANNED] Refinement writes `spec.revisionFeedback` to the `AgenticRun` CR via patch. If the value already exists, it uses `replace`; otherwise `add`.
+24. [PLANNED] A revision is considered pending when `spec.revisionFeedback` is set AND `metadata.generation` exceeds the `observedGeneration` on the `Analyzed` condition.
 
 ### Sandbox Log Streaming
 
-26. While a stage is in progress, the plugin streams logs from the sandbox pod's `agent` container.
-27. Log streaming uses `follow: true` with automatic reconnection on stream end or error (exponential backoff from 1s to 15s).
-28. When the streaming result data arrives, the log viewer auto-collapses to an expandable section.
-29. Logs are capped at 20,000 lines.
+25. While a stage is in progress, the plugin streams logs from the sandbox pod's `agent` container.
+26. Log streaming uses `follow: true` with automatic reconnection on stream end or error (exponential backoff from 1s to 15s).
+27. When the streaming result data arrives, the log viewer auto-collapses to an expandable section.
+28. Logs are capped at 20,000 lines.
 
 ### Escalation
 
-31. Verification failure enables an "Escalate" button that opens a confirmation modal.
-32. Escalation approval creates an Escalation stage in the `AgenticRunApproval` CR.
-33. Escalation results display a summary and optionally the full escalation content in an expandable section.
+29. Verification failure enables an "Escalate" button that opens a confirmation modal.
+30. Escalation approval creates an Escalation stage in the `AgenticRunApproval` CR.
+31. Escalation results display a summary and optionally the full escalation content in an expandable section.
 
 ## Constraints
 
