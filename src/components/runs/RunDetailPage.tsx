@@ -417,10 +417,7 @@ const RunDetailPage: FC = () => {
             ) : null}
 
             {resultsLoaded && view && view.timeline.length > 0 && (
-              <>
-                <Title headingLevel="h4">{t('Timeline')}</Title>
-                <RunTimeline events={view.timeline} />
-              </>
+              <RunTimeline events={view.timeline} />
             )}
           </PageSection>
         </PageGroup>
