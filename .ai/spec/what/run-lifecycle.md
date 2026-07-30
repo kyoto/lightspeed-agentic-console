@@ -33,6 +33,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 10. The detail page MUST gate its content behind a loading/error guard (`StatusGuard`): show a spinner while loading, an error state on failure (403 → restricted access, 404 → not found, other → error message with detail), and the page content when data is ready.
 11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis request, Remediation options, Execution summary, Verification summary, and Timeline.
 11a. Legal disclaimer banner — persistent info alert below the detail page title/status: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
+11b. AI-generated content labeling — section headings for AI-generated content (Root cause analysis, Remediation hub, Verification summary) MUST display a compact "AI-generated" label inline next to the heading text.
 12. During in-progress stages (Analyzing, Executing, Verifying), the page MUST show a `StageInProgress` card with embedded live log streaming from the sandbox pod.
 13. The page MUST be wrapped in `AgenticLayout` to display the system-suspended banner when the agentic config has `suspended: true`.
 

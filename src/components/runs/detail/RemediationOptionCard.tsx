@@ -16,12 +16,11 @@ import {
   Spinner,
   Title,
 } from '@patternfly/react-core';
-import { AngleDownIcon, AngleRightIcon, DownloadIcon } from '@patternfly/react-icons';
+import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
 import type { FC } from 'react';
 import * as React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getRiskColor } from '../../../models/agenticrun';
 import { RemediationOptionView } from '../../../models/agenticrun-views';
 import { getReversibilityColor, getReversibilityText } from '../../../utils/agenticrun-utils';
 import { ApprovalGatedButton } from '../../ApprovalGatedButton';
@@ -106,34 +105,41 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
               <Spinner size="md" />
             </FlexItem>
           ) : (
-            <FlexItem>{isExpanded ? <AngleDownIcon /> : <AngleRightIcon />}</FlexItem>
+            <FlexItem>{isExpanded ? <AngleUpIcon /> : <AngleDownIcon />}</FlexItem>
           )}
-          <FlexItem>
-            <CardTitle>
-              {readOnly
-                ? t('Selected option')
-                : t('Option {{number}}', { number: option.index + 1 })}
-            </CardTitle>
-          </FlexItem>
-          {option.risk && (
+          <Flex direction={{ default: 'column' }}>
             <FlexItem>
-              <Label color={getRiskColor(option.risk)} variant="outline">
-                {t('Risk')}: {option.risk}
-              </Label>
+              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                <FlexItem>
+                  <CardTitle>
+                    <strong>
+                      {readOnly
+                        ? t('Selected option')
+                        : t('Option {{number}}', { number: option.index + 1 })}
+                    </strong>
+                  </CardTitle>
+                </FlexItem>
+                {option.reversibility && (
+                  <FlexItem>
+                    <Label
+                      color={getReversibilityColor(option.reversibility)}
+                      isCompact
+                      variant="outline"
+                    >
+                      {getReversibilityText(option.reversibility, t)}
+                    </Label>
+                  </FlexItem>
+                )}
+              </Flex>
             </FlexItem>
-          )}
-          {option.reversibility && (
             <FlexItem>
-              <Label color={getReversibilityColor(option.reversibility)} variant="outline">
-                {getReversibilityText(option.reversibility, t)}
-              </Label>
+              <Title headingLevel="h5">
+                <strong>
+                  <MarkdownContent component="span" inline text={option.title} />
+                </strong>
+              </Title>
             </FlexItem>
-          )}
-          <FlexItem>
-            <Title headingLevel="h5">
-              <MarkdownContent component="span" inline text={option.title} />
-            </Title>
-          </FlexItem>
+          </Flex>
         </Flex>
       </CardHeader>
       {isExpanded && (

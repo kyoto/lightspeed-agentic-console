@@ -418,13 +418,16 @@ const RunDetailPage: FC = () => {
               gap={{ default: 'gapXs' }}
               spaceItems={{ default: 'spaceItemsXs' }}
             >
-              <Flex>
+              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 <FlexItem>
                   <Title headingLevel="h4">{t('Remediation hub')}</Title>
                 </FlexItem>
+                <FlexItem>
+                  <Label isCompact>{t('AI-generated')}</Label>
+                </FlexItem>
                 {resultsLoaded && view && view.phase === 'Proposed' && view.options.length > 0 && (
                   <FlexItem>
-                    <Label variant="outline">
+                    <Label isCompact variant="outline">
                       {t('{{count}} remediation option', { count: view.options.length })}
                     </Label>
                   </FlexItem>

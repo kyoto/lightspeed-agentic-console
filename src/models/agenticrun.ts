@@ -637,20 +637,6 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   return 'Pending';
 };
 
-export const getRiskColor = (risk?: string): 'green' | 'orange' | 'red' | 'grey' => {
-  switch (risk) {
-    case 'Low':
-      return 'green';
-    case 'Medium':
-      return 'orange';
-    case 'High':
-    case 'Critical':
-      return 'red';
-    default:
-      return 'grey';
-  }
-};
-
 export type LLMProviderType =
   'Anthropic' | 'GoogleCloudVertex' | 'OpenAI' | 'AzureOpenAI' | 'AWSBedrock';
 
