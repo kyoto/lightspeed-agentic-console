@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { DocumentTitle, ResourceIcon, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
+import {
+  DocumentTitle,
+  ResourceIcon,
+  ResourceLink,
+  Timestamp,
+} from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
   Breadcrumb,
@@ -311,6 +316,12 @@ const RunDetailPage: FC = () => {
                   <FlexItem>
                     <PreviewBadge />
                   </FlexItem>
+                  {view &&
+                    view.targetNamespaces?.map((ns) => (
+                      <FlexItem key={ns}>
+                        <ResourceLink kind="Namespace" name={ns} />
+                      </FlexItem>
+                    ))}
                 </Flex>
                 {view && (
                   <FlexItem>
@@ -320,16 +331,12 @@ const RunDetailPage: FC = () => {
                       </FlexItem>
                       {view.source && (
                         <FlexItem>
-                          <Label variant="outline">{`${t('Trigger domain')}: ${view.source}`}</Label>
+                          <Label
+                            isCompact
+                            variant="outline"
+                          >{`${t('Trigger domain')}: ${view.source}`}</Label>
                         </FlexItem>
                       )}
-                      {view.targetNamespaces?.map((ns) => (
-                        <FlexItem key={ns}>
-                          <Label variant="outline" color="blue">
-                            {`${t('Namespace')}: ${ns}`}
-                          </Label>
-                        </FlexItem>
-                      ))}
                     </Flex>
                   </FlexItem>
                 )}
