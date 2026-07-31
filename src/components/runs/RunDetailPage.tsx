@@ -192,7 +192,7 @@ const RunDetailPage: FC = () => {
                     onClick={() => setIsDenyModalOpen(true)}
                     variant="secondary"
                   >
-                    {t('Deny Run')}
+                    {t('Deny run')}
                   </ApprovalGatedButton>
                 </FlexItem>
               </Flex>
@@ -509,7 +509,7 @@ const RunDetailPage: FC = () => {
       />
 
       <ConfirmationModal
-        actionLabel={t('Deny Run')}
+        actionLabel={t('Deny run')}
         actionVariant="danger"
         body={t(
           'Denying this run will cancel all proposed automated actions. The associated alerts must then be investigated and resolved manually.',
