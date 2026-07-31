@@ -14,6 +14,7 @@ import {
   AgenticRunPhase,
   AnalysisResultGVK,
   AnalysisResultK8s,
+  ApprovalStageType,
   derivePhaseFromConditions,
   ExecutionResultGVK,
   ExecutionResultK8s,
@@ -26,7 +27,7 @@ import {
   VerificationResultGVK,
   VerificationResultK8s,
 } from '../models/agenticrun';
-import { buildApprovalPatch } from '../utils/approval';
+import { buildApprovalPatch, stageNeedsApproval } from '../utils/approval';
 import {
   AgenticRunView,
   ExecutionView,
@@ -212,7 +213,7 @@ export const mapTimeline = (
   const execStage = (approval?.spec?.stages ?? []).find((s) => s.type === 'Execution');
   const execStartedCond = (execution?.status?.conditions ?? []).find((c) => c.type === 'Started');
   const approvalTimestamp =
-    approval?.spec?.approver?.approvedAt ?? execStartedCond?.lastTransitionTime;
+    execStartedCond?.lastTransitionTime ?? approval?.spec?.approver?.approvedAt;
   if (execStage?.decision === 'Denied') {
     events.push({
       label: approval?.spec?.approver?.username
@@ -336,8 +337,10 @@ export interface UseAgenticRunReturn {
   resultsError: Error | undefined;
   canApprove: boolean;
   canApproveLoading: boolean;
+  needsApproval: Record<ApprovalStageType, boolean>;
+  approveStage: (stageType: ApprovalStageType) => Promise<boolean>;
   approveExecution: (selectedOption: number) => Promise<boolean>;
-  denyExecution: () => Promise<boolean>;
+  denyStage: (stageType: ApprovalStageType) => Promise<boolean>;
   mutationInProgress: boolean;
   mutationError: string | undefined;
   clearMutationError: () => void;
@@ -423,6 +426,19 @@ export const useAgenticRun = (
     [run, analysis, execution, verification, approval, t],
   );
 
+  const conditions = run?.status?.conditions;
+  const phase = view?.phase ?? 'Pending';
+
+  const needsApproval = useMemo(
+    () => ({
+      Analysis: stageNeedsApproval(approval, 'Analysis', conditions, phase),
+      Execution: stageNeedsApproval(approval, 'Execution', conditions, phase),
+      Verification: stageNeedsApproval(approval, 'Verification', conditions, phase),
+      Escalation: stageNeedsApproval(approval, 'Escalation', conditions, phase),
+    }),
+    [approval, conditions, phase],
+  );
+
   const resultsLoaded = analysisLoaded && executionLoaded && verificationLoaded && approvalLoaded;
   const approvalNotFound = approvalError instanceof HttpError && approvalError.code === 404;
   const resultsError =
@@ -478,6 +494,15 @@ export const useAgenticRun = (
     [run, approval, namespace, canApprove, t],
   );
 
+  const approveStage = useCallback(
+    async (stageType: ApprovalStageType): Promise<boolean> =>
+      runApprovalMutation(
+        buildApprovalPatch(approval, stageType, false),
+        t('Failed to approve {{stage}}.', { stage: stageType.toLowerCase() }),
+      ),
+    [approval, runApprovalMutation, t],
+  );
+
   const approveExecution = useCallback(
     async (selectedOption: number): Promise<boolean> =>
       runApprovalMutation(
@@ -490,11 +515,11 @@ export const useAgenticRun = (
     [approval, runApprovalMutation, t],
   );
 
-  const denyExecution = useCallback(
-    async (): Promise<boolean> =>
+  const denyStage = useCallback(
+    async (stageType: ApprovalStageType): Promise<boolean> =>
       runApprovalMutation(
-        buildApprovalPatch(approval, 'Execution', true),
-        t('Failed to deny execution.'),
+        buildApprovalPatch(approval, stageType, true),
+        t('Failed to deny {{stage}}.', { stage: stageType.toLowerCase() }),
       ),
     [approval, runApprovalMutation, t],
   );
@@ -508,8 +533,10 @@ export const useAgenticRun = (
     resultsError: resultsError as Error | undefined,
     canApprove,
     canApproveLoading,
+    needsApproval,
+    approveStage,
     approveExecution,
-    denyExecution,
+    denyStage,
     mutationInProgress,
     mutationError,
     clearMutationError,

@@ -68,3 +68,18 @@ export const getReversibilityDescription = (reversibility: string, t: TFunction)
       return '';
   }
 };
+
+export const getStageLabel = (stageType: string, t: TFunction): string => {
+  switch (stageType) {
+    case 'Analysis':
+      return t('Analysis');
+    case 'Execution':
+      return t('Execution');
+    case 'Verification':
+      return t('Verification');
+    case 'Escalation':
+      return t('Escalation');
+    default:
+      return stageType;
+  }
+};
