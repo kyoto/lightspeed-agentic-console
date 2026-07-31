@@ -52,7 +52,14 @@ export const VerificationSummary: FC<VerificationSummaryProps> = ({ verification
             )}
           </FlexItem>
           <FlexItem>
-            <Title headingLevel="h4">{t('Verification summary')}</Title>
+            <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+              <FlexItem>
+                <Title headingLevel="h4">{t('Verification summary')}</Title>
+              </FlexItem>
+              <FlexItem>
+                <Label isCompact>{t('AI-generated')}</Label>
+              </FlexItem>
+            </Flex>
           </FlexItem>
         </Flex>
       </CardHeader>
