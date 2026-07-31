@@ -121,7 +121,7 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
             <FlexItem>
               <Card>
                 <CardBody>
-                  <Flex>
+                  <Flex direction={{ default: 'column' }}>
                     <FlexItem>
                       <MarkdownContent text={rootCause.cause} />
                     </FlexItem>
