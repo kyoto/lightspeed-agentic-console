@@ -1,3 +1,7 @@
 .ols-plugin__remediation-card-header--clickable {
   cursor: pointer;
 }
+
+.ols-plugin__remediation-card-header--title {
+  text-transform: uppercase;
+}

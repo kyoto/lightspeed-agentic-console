@@ -100,7 +100,7 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
   return (
     <ExpandableSection
       toggleText={
-        isExpanded ? t('Hide {{title}} logs', { title }) : t('Show {{title}} logs', { title })
+        isExpanded ? t('Hide {{title}} logs', { title }) : t('View {{title}} logs', { title })
       }
       onToggle={(_e, expanded) => setIsExpanded(expanded)}
       isExpanded={isExpanded}

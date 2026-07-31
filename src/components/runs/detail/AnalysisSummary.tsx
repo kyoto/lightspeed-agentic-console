@@ -7,7 +7,9 @@ import {
   EmptyStateBody,
   Flex,
   FlexItem,
+  Label,
   Skeleton,
+  Title,
 } from '@patternfly/react-core';
 import type { FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,17 +23,21 @@ import { MarkdownContent } from '../../MarkdownContent';
 import { SandboxLogViewer } from './SandboxLogViewer';
 
 interface AnalysisSummaryProps {
+  analysisRequest?: string;
   rootCause?: RootCauseView;
+  hasRemediationOptions: boolean;
   phase: AgenticRunPhase;
   analysisSandbox?: SandboxView;
   analysisStartedAt?: string;
 }
 
 export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
-  rootCause,
+  analysisRequest,
   phase,
   analysisSandbox,
   analysisStartedAt,
+  hasRemediationOptions,
+  rootCause,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
 
@@ -50,7 +56,7 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
               <FlexItem>
                 <Skeleton
                   screenreaderText={
-                    isPending ? t('Waiting for analysis to start...') : t('Loading root cause')
+                    isPending ? t('Waiting for analysis to start...') : t('Loading analysis')
                   }
                   width="70%"
                 />
@@ -78,27 +84,57 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
     );
   }
 
-  if (rootCause) {
+  if (analysisRequest) {
     return (
-      <Card>
-        <CardBody>
-          <Content component={ContentVariants.small}>
-            <Flex>
-              <FlexItem>{t('DETECTED ROOT CAUSE')}</FlexItem>
+      <>
+        <Card>
+          <CardBody>
+            <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+              <FlexItem>
+                <MarkdownContent text={analysisRequest} />
+              </FlexItem>
+              {analysisSandbox && (
+                <FlexItem>
+                  <SandboxLogViewer
+                    title={t('Analysis')}
+                    sandbox={analysisSandbox}
+                    sinceTime={analysisStartedAt}
+                  />
+                </FlexItem>
+              )}
             </Flex>
-          </Content>
-          <MarkdownContent text={rootCause.cause} />
-          <MarkdownContent text={rootCause.detail} />
+          </CardBody>
+        </Card>
 
-          {analysisSandbox && (
-            <SandboxLogViewer
-              title={t('Analysis')}
-              sandbox={analysisSandbox}
-              sinceTime={analysisStartedAt}
-            />
-          )}
-        </CardBody>
-      </Card>
+        {!hasRemediationOptions && rootCause && (
+          <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+            <FlexItem>
+              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                <FlexItem>
+                  <Title headingLevel="h4">{t('Root cause analysis')}</Title>
+                </FlexItem>
+                <FlexItem>
+                  <Label isCompact>{t('AI-generated')}</Label>
+                </FlexItem>
+              </Flex>
+            </FlexItem>
+            <FlexItem>
+              <Card>
+                <CardBody>
+                  <Flex>
+                    <FlexItem>
+                      <MarkdownContent text={rootCause.cause} />
+                    </FlexItem>
+                    <FlexItem>
+                      <MarkdownContent text={rootCause.detail} />
+                    </FlexItem>
+                  </Flex>
+                </CardBody>
+              </Card>
+            </FlexItem>
+          </Flex>
+        )}
+      </>
     );
   }
 
