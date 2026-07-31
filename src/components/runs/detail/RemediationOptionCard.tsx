@@ -206,7 +206,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                 {(option.rollbackDescription || option.rollbackCommand) && (
                   <FlexItem>
                     <Title className="ols-plugin__remediation-card-header--title" headingLevel="h6">
-                      {t('Rollback Plan')}
+                      {t('Rollback plan')}
                     </Title>
                     {option.rollbackDescription && (
                       <MarkdownContent text={option.rollbackDescription} />

@@ -145,7 +145,7 @@ const AgentForm: React.FC<AgentFormProps> = ({ providers, onSubmit, onCancel }) 
       <ExpandableSection
         isExpanded={showTimeouts}
         onToggle={(_e, expanded) => setShowTimeouts(expanded)}
-        toggleText={showTimeouts ? t('Hide Timeouts') : t('Show Timeouts')}
+        toggleText={showTimeouts ? t('Hide timeouts') : t('Show timeouts')}
       >
         <FormGroup fieldId="agent-timeout-analysis" label={t('Analysis (seconds)')}>
           {clampedNumberInput(analysisSeconds, 1, 3600, setAnalysisSeconds)}

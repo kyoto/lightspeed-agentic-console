@@ -177,7 +177,7 @@ const LLMProviderForm: React.FC<LLMProviderFormProps> = ({ onSubmit, onCancel })
         </>
       )}
 
-      <FormGroup fieldId="provider-url" label={t('URL Override')}>
+      <FormGroup fieldId="provider-url" label={t('URL override')}>
         <TextInput
           id="provider-url"
           onChange={(_e, v) => setUrl(v)}
