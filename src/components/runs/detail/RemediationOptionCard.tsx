@@ -75,6 +75,17 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
   return (
     <Card isSelectable={!readOnly} isSelected={isSelected}>
       <CardHeader
+        className="ols-plugin__remediation-card-header--clickable"
+        onClick={() => {
+          if (readOnly) onToggleExpand();
+        }}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (readOnly && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onToggleExpand();
+          }
+        }}
+        role={readOnly ? 'button' : undefined}
         selectableActions={
           readOnly
             ? undefined
@@ -87,18 +98,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                 onChange: () => onSelect(),
               }
         }
-        onClick={() => {
-          if (readOnly) onToggleExpand();
-        }}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (readOnly && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            onToggleExpand();
-          }
-        }}
-        role={readOnly ? 'button' : undefined}
         tabIndex={readOnly ? 0 : undefined}
-        className="ols-plugin__remediation-card-header--clickable"
       >
         <Flex alignItems={{ default: 'alignItemsCenter' }}>
           {showSpinner ? (
@@ -117,28 +117,28 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
           </FlexItem>
           {option.risk && (
             <FlexItem>
-              <Label variant="outline" color={getRiskColor(option.risk)}>
+              <Label color={getRiskColor(option.risk)} variant="outline">
                 {t('Risk')}: {option.risk}
               </Label>
             </FlexItem>
           )}
           {option.reversibility && (
             <FlexItem>
-              <Label variant="outline" color={getReversibilityColor(option.reversibility)}>
+              <Label color={getReversibilityColor(option.reversibility)} variant="outline">
                 {getReversibilityText(option.reversibility, t)}
               </Label>
             </FlexItem>
           )}
           <FlexItem>
             <Title headingLevel="h5">
-              <MarkdownContent text={option.title} component="span" inline />
+              <MarkdownContent component="span" inline text={option.title} />
             </Title>
           </FlexItem>
         </Flex>
       </CardHeader>
       {isExpanded && (
         <CardBody>
-          <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+          <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             <FlexItem>
               <MarkdownContent text={option.description} />
             </FlexItem>
@@ -146,7 +146,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
             {(option.cause || option.detail) && (
               <>
                 <FlexItem>
-                  <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                  <Title className="ols-plugin__remediation-card-header--title" headingLevel="h6">
                     {t('Root cause analysis')}
                   </Title>
                 </FlexItem>
@@ -162,10 +162,10 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
             )}
 
             <FlexItem>
-              <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                 {option.estimatedImpact && (
                   <FlexItem>
-                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                    <Title className="ols-plugin__remediation-card-header--title" headingLevel="h6">
                       {t('Estimated impact')}
                     </Title>
                     <MarkdownContent text={option.estimatedImpact} />
@@ -175,13 +175,13 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                 {option.actions && option.actions.length > 0 && (
                   <FlexItem>
                     <Flex
-                      spaceItems={{ default: 'spaceItemsMd' }}
                       direction={{ default: 'column' }}
+                      spaceItems={{ default: 'spaceItemsMd' }}
                     >
                       <FlexItem>
                         <Title
-                          headingLevel="h6"
                           className="ols-plugin__remediation-card-header--title"
+                          headingLevel="h6"
                         >
                           {t('Proposed Agent Command', { count: option.actions.length })}
                         </Title>
@@ -190,7 +190,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                         <Content component="ol">
                           {option.actions.map((action, i) => (
                             <Content component="li" key={i}>
-                              <Label variant="outline" isCompact>
+                              <Label isCompact variant="outline">
                                 {action.type}
                               </Label>{' '}
                               <MarkdownContent text={action.description} />
@@ -205,7 +205,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
 
                 {(option.rollbackDescription || option.rollbackCommand) && (
                   <FlexItem>
-                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                    <Title className="ols-plugin__remediation-card-header--title" headingLevel="h6">
                       {t('Rollback Plan')}
                     </Title>
                     {option.rollbackDescription && (
@@ -219,7 +219,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
 
                 {option.verificationSteps && option.verificationSteps.length > 0 && (
                   <FlexItem>
-                    <Title headingLevel="h6" className="ols-plugin__remediation-card-header--title">
+                    <Title className="ols-plugin__remediation-card-header--title" headingLevel="h6">
                       {t('Verification steps')}
                     </Title>
                     {option.verificationDescription && (
@@ -258,7 +258,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                       </FlexItem>
                     )}
                     <FlexItem>
-                      <Button variant="link" icon={<DownloadIcon />} onClick={handleDownloadPlan}>
+                      <Button icon={<DownloadIcon />} onClick={handleDownloadPlan} variant="link">
                         {t('Download plan')}
                       </Button>
                     </FlexItem>

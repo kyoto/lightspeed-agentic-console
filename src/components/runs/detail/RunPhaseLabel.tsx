@@ -6,7 +6,7 @@ import { AgenticRunPhase } from '../../../models/agenticrun-views';
 export const RunPhaseLabel: FC<{ phase: AgenticRunPhase }> = ({ phase }) => {
   const display = getPhaseDisplay(phase);
   return (
-    <Label isCompact color={display.color}>
+    <Label color={display.color} isCompact>
       {display.label}
     </Label>
   );

@@ -96,106 +96,106 @@ const LLMProviderForm: React.FC<LLMProviderFormProps> = ({ onSubmit, onCancel })
 
       {error && <p className="ols-plugin__config-error-text">{error}</p>}
 
-      <FormGroup label={t('Name')} isRequired fieldId="provider-name">
-        <TextInput id="provider-name" value={name} onChange={(_e, v) => setName(v)} isRequired />
+      <FormGroup fieldId="provider-name" isRequired label={t('Name')}>
+        <TextInput id="provider-name" isRequired onChange={(_e, v) => setName(v)} value={name} />
       </FormGroup>
 
-      <FormGroup label={t('Provider Type')} isRequired fieldId="provider-type">
+      <FormGroup fieldId="provider-type" isRequired label={t('Provider Type')}>
         <FormSelect
           id="provider-type"
-          value={providerType}
           onChange={(_e, v) => {
             setProviderType(v as LLMProviderType);
             resetProviderFields();
           }}
+          value={providerType}
         >
           {PROVIDER_TYPES.map((pt) => (
-            <FormSelectOption key={pt.value} value={pt.value} label={pt.label} />
+            <FormSelectOption key={pt.value} label={pt.label} value={pt.value} />
           ))}
         </FormSelect>
       </FormGroup>
 
-      <FormGroup label={t('Credentials Secret Name')} isRequired fieldId="provider-secret">
+      <FormGroup fieldId="provider-secret" isRequired label={t('Credentials Secret Name')}>
         <TextInput
           id="provider-secret"
-          value={secretName}
-          onChange={(_e, v) => setSecretName(v)}
           isRequired
+          onChange={(_e, v) => setSecretName(v)}
+          value={secretName}
         />
       </FormGroup>
 
       {providerType === 'GoogleCloudVertex' && (
         <>
-          <FormGroup label={t('Project ID')} isRequired fieldId="provider-project">
+          <FormGroup fieldId="provider-project" isRequired label={t('Project ID')}>
             <TextInput
               id="provider-project"
-              value={projectID}
-              onChange={(_e, v) => setProjectID(v)}
               isRequired
+              onChange={(_e, v) => setProjectID(v)}
+              value={projectID}
             />
           </FormGroup>
-          <FormGroup label={t('Region')} isRequired fieldId="provider-region">
+          <FormGroup fieldId="provider-region" isRequired label={t('Region')}>
             <TextInput
               id="provider-region"
-              value={region}
-              onChange={(_e, v) => setRegion(v)}
               isRequired
+              onChange={(_e, v) => setRegion(v)}
+              value={region}
             />
           </FormGroup>
         </>
       )}
 
       {providerType === 'AWSBedrock' && (
-        <FormGroup label={t('Region')} isRequired fieldId="provider-region">
+        <FormGroup fieldId="provider-region" isRequired label={t('Region')}>
           <TextInput
             id="provider-region"
-            value={region}
-            onChange={(_e, v) => setRegion(v)}
             isRequired
+            onChange={(_e, v) => setRegion(v)}
+            value={region}
           />
         </FormGroup>
       )}
 
       {providerType === 'AzureOpenAI' && (
         <>
-          <FormGroup label={t('Endpoint')} isRequired fieldId="provider-endpoint">
+          <FormGroup fieldId="provider-endpoint" isRequired label={t('Endpoint')}>
             <TextInput
               id="provider-endpoint"
-              value={endpoint}
-              onChange={(_e, v) => setEndpoint(v)}
               isRequired
+              onChange={(_e, v) => setEndpoint(v)}
+              value={endpoint}
             />
           </FormGroup>
-          <FormGroup label={t('API Version')} fieldId="provider-api-version">
+          <FormGroup fieldId="provider-api-version" label={t('API Version')}>
             <TextInput
               id="provider-api-version"
-              value={apiVersion}
               onChange={(_e, v) => setApiVersion(v)}
               placeholder="2024-02-01"
+              value={apiVersion}
             />
           </FormGroup>
         </>
       )}
 
-      <FormGroup label={t('URL Override')} fieldId="provider-url">
+      <FormGroup fieldId="provider-url" label={t('URL Override')}>
         <TextInput
           id="provider-url"
-          value={url}
           onChange={(_e, v) => setUrl(v)}
           placeholder={t('Optional')}
+          value={url}
         />
       </FormGroup>
 
       <div className="ols-plugin__config-form-actions">
         <Button
-          variant="primary"
-          onClick={handleSubmit}
-          isLoading={submitting}
           isDisabled={!isValid() || submitting}
+          isLoading={submitting}
+          onClick={handleSubmit}
+          variant="primary"
         >
           {t('Create')}
         </Button>
-        <Button variant="link" onClick={onCancel} isDisabled={submitting}>
+        <Button isDisabled={submitting} onClick={onCancel} variant="link">
           {t('Cancel')}
         </Button>
       </div>

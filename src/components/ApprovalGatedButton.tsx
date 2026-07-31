@@ -29,11 +29,11 @@ export const ApprovalGatedButton: FC<ApprovalGatedButtonProps> = ({
       trigger={!canApprove && !canApproveLoading && !mutationInProgress ? undefined : 'manual'}
     >
       <Button
-        variant={variant}
-        isDanger={isDanger}
-        onClick={onClick}
-        isLoading={canApproveLoading || mutationInProgress}
         isAriaDisabled={!canApprove || mutationInProgress}
+        isDanger={isDanger}
+        isLoading={canApproveLoading || mutationInProgress}
+        onClick={onClick}
+        variant={variant}
       >
         {children}
       </Button>

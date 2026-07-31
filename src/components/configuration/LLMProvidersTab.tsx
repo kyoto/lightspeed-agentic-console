@@ -72,13 +72,13 @@ const LLMProvidersTab: React.FC = () => {
   return (
     <>
       {(error || loadError) && (
-        <Alert variant="danger" isInline title={t('Error')}>
+        <Alert isInline title={t('Error')} variant="danger">
           {error || String(loadError)}
         </Alert>
       )}
 
       <div className="ols-plugin__config-table-actions">
-        <Button variant="primary" onClick={() => setShowForm(true)} isDisabled={showForm}>
+        <Button isDisabled={showForm} onClick={() => setShowForm(true)} variant="primary">
           {t('Create LLM Provider')}
         </Button>
       </div>
@@ -105,19 +105,19 @@ const LLMProvidersTab: React.FC = () => {
                   <Dropdown
                     isOpen={openKebab === p.metadata.name}
                     onOpenChange={(open) => setOpenKebab(open ? p.metadata.name : null)}
+                    popperProps={{ position: 'right' }}
                     toggle={(toggleRef) => (
                       <MenuToggle
-                        ref={toggleRef}
-                        variant="plain"
+                        isExpanded={openKebab === p.metadata.name}
                         onClick={() =>
                           setOpenKebab(openKebab === p.metadata.name ? null : p.metadata.name)
                         }
-                        isExpanded={openKebab === p.metadata.name}
+                        ref={toggleRef}
+                        variant="plain"
                       >
                         <EllipsisVIcon />
                       </MenuToggle>
                     )}
-                    popperProps={{ position: 'right' }}
                   >
                     <DropdownList>
                       <DropdownItem key="delete" onClick={() => handleDelete(p)}>
@@ -136,7 +136,7 @@ const LLMProvidersTab: React.FC = () => {
         </Tbody>
       </Table>
 
-      {showForm && <LLMProviderForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />}
+      {showForm && <LLMProviderForm onCancel={() => setShowForm(false)} onSubmit={handleCreate} />}
     </>
   );
 };

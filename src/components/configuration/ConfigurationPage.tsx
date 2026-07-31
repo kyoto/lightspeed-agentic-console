@@ -27,14 +27,14 @@ const ConfigurationPage: React.FC = () => {
 
   return (
     <AgenticLayout>
-      <PageSection type="breadcrumb" hasBodyWrapper={false}>
+      <PageSection hasBodyWrapper={false} type="breadcrumb">
         <Breadcrumb>
           <BreadcrumbItem
-            to="#"
             onClick={(e) => {
               e.preventDefault();
               navigate('/lightspeed/runs');
             }}
+            to="#"
           >
             {t('Agentic runs')}
           </BreadcrumbItem>
@@ -42,7 +42,7 @@ const ConfigurationPage: React.FC = () => {
         </Breadcrumb>
       </PageSection>
       <PageSection>
-        <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
+        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
           <FlexItem>
             <Title headingLevel="h1">{t('Configuration')}</Title>
           </FlexItem>
@@ -54,8 +54,8 @@ const ConfigurationPage: React.FC = () => {
       <PageSection>
         <Tabs
           activeKey={activeTab}
-          onSelect={(_e, key) => setActiveTab(key)}
           mountOnEnter
+          onSelect={(_e, key) => setActiveTab(key)}
           unmountOnExit
         >
           <Tab eventKey={0} title={<TabTitleText>{t('Approval Policy')}</TabTitleText>}>

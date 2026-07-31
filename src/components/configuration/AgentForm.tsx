@@ -80,15 +80,15 @@ const AgentForm: React.FC<AgentFormProps> = ({ providers, onSubmit, onCancel }) 
     setter: (v: number) => void,
   ) => (
     <NumberInput
-      value={value}
-      min={min}
       max={max}
-      onMinus={() => setter(Math.max(min, value - 30))}
-      onPlus={() => setter(Math.min(max, value + 30))}
+      min={min}
       onChange={(e) => {
         const val = Number((e.target as HTMLInputElement).value);
         if (val >= min && val <= max) setter(val);
       }}
+      onMinus={() => setter(Math.max(min, value - 30))}
+      onPlus={() => setter(Math.min(max, value + 30))}
+      value={value}
     />
   );
 
@@ -98,79 +98,79 @@ const AgentForm: React.FC<AgentFormProps> = ({ providers, onSubmit, onCancel }) 
 
       {error && <p className="ols-plugin__config-error-text">{error}</p>}
 
-      <FormGroup label={t('Name')} isRequired fieldId="agent-name">
+      <FormGroup fieldId="agent-name" isRequired label={t('Name')}>
         <TextInput
           id="agent-name"
-          value={name}
-          onChange={(_e, v) => setName(v)}
           isRequired
+          onChange={(_e, v) => setName(v)}
           placeholder="default"
+          value={name}
         />
       </FormGroup>
 
-      <FormGroup label={t('LLM Provider')} isRequired fieldId="agent-provider">
+      <FormGroup fieldId="agent-provider" isRequired label={t('LLM Provider')}>
         <FormSelect
           id="agent-provider"
-          value={providerName}
           onChange={(_e, v) => setProviderName(v)}
+          value={providerName}
         >
           {providers.length ? (
             providers.map((p) => (
               <FormSelectOption
                 key={p.metadata.name}
-                value={p.metadata.name}
                 label={p.metadata.name}
+                value={p.metadata.name}
               />
             ))
           ) : (
-            <FormSelectOption value="" label={t('No providers available')} isDisabled />
+            <FormSelectOption isDisabled label={t('No providers available')} value="" />
           )}
         </FormSelect>
       </FormGroup>
 
-      <FormGroup label={t('Model')} isRequired fieldId="agent-model">
+      <FormGroup fieldId="agent-model" isRequired label={t('Model')}>
         <TextInput
           id="agent-model"
-          value={model}
-          onChange={(_e, v) => setModel(v)}
           isRequired
+          onChange={(_e, v) => setModel(v)}
           placeholder="claude-opus-4-6"
+          value={model}
         />
       </FormGroup>
 
-      <FormGroup label={t('Max Turns')} fieldId="agent-max-turns">
+      <FormGroup fieldId="agent-max-turns" label={t('Max Turns')}>
         {clampedNumberInput(maxTurns, 1, 500, setMaxTurns)}
       </FormGroup>
 
       <ExpandableSection
-        toggleText={showTimeouts ? t('Hide Timeouts') : t('Show Timeouts')}
         isExpanded={showTimeouts}
         onToggle={(_e, expanded) => setShowTimeouts(expanded)}
+        toggleText={showTimeouts ? t('Hide Timeouts') : t('Show Timeouts')}
       >
-        <FormGroup label={t('Analysis (seconds)')} fieldId="agent-timeout-analysis">
+        <FormGroup fieldId="agent-timeout-analysis" label={t('Analysis (seconds)')}>
           {clampedNumberInput(analysisSeconds, 1, 3600, setAnalysisSeconds)}
         </FormGroup>
-        <FormGroup label={t('Execution (seconds)')} fieldId="agent-timeout-execution">
+        <FormGroup fieldId="agent-timeout-execution" label={t('Execution (seconds)')}>
           {clampedNumberInput(executionSeconds, 1, 3600, setExecutionSeconds)}
         </FormGroup>
-        <FormGroup label={t('Verification (seconds)')} fieldId="agent-timeout-verification">
+        <FormGroup fieldId="agent-timeout-verification" label={t('Verification (seconds)')}>
           {clampedNumberInput(verificationSeconds, 1, 3600, setVerificationSeconds)}
         </FormGroup>
-        <FormGroup label={t('Chat (seconds)')} fieldId="agent-timeout-chat">
+        <FormGroup fieldId="agent-timeout-chat" label={t('Chat (seconds)')}>
           {clampedNumberInput(chatSeconds, 1, 600, setChatSeconds)}
         </FormGroup>
       </ExpandableSection>
 
       <div className="ols-plugin__config-form-actions">
         <Button
-          variant="primary"
-          onClick={handleSubmit}
-          isLoading={submitting}
           isDisabled={!isValid() || submitting}
+          isLoading={submitting}
+          onClick={handleSubmit}
+          variant="primary"
         >
           {t('Create')}
         </Button>
-        <Button variant="link" onClick={onCancel} isDisabled={submitting}>
+        <Button isDisabled={submitting} onClick={onCancel} variant="link">
           {t('Cancel')}
         </Button>
       </div>

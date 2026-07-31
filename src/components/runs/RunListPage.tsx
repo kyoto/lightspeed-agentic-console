@@ -92,9 +92,9 @@ const RunKebab: React.FC<{
       toggle={(toggleRef) => (
         <MenuToggle
           aria-label={t('Actions for {{name}}', { name: obj.metadata.name })}
-          ref={toggleRef}
           isExpanded={isOpen}
           onClick={() => setIsOpen((prev) => !prev)}
+          ref={toggleRef}
           variant="plain"
         >
           <EllipsisVIcon />

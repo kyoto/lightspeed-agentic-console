@@ -35,6 +35,7 @@ export const CodeBlockWithClipboard: FC<CodeBlockWithClipboardProps> = ({
   const actions = (
     <CodeBlockAction>
       <ClipboardCopyButton
+        exitDelay={copyStatus !== 'idle' ? 1500 : 600}
         id={`copy-code-button-${id}`}
         onClick={() => {
           if (!navigator.clipboard) {
@@ -46,9 +47,8 @@ export const CodeBlockWithClipboard: FC<CodeBlockWithClipboardProps> = ({
             () => setCopyStatus('error'),
           );
         }}
-        exitDelay={copyStatus !== 'idle' ? 1500 : 600}
-        variant="plain"
         onTooltipHidden={() => setCopyStatus('idle')}
+        variant="plain"
       >
         {copyStatus === 'success' && t('Successfully copied to clipboard!')}
         {copyStatus === 'error' && t('Failed to copy to clipboard')}
@@ -64,9 +64,9 @@ export const CodeBlockWithClipboard: FC<CodeBlockWithClipboardProps> = ({
 
         {isExpandable && (
           <ExpandableSection
-            isExpanded={isExpanded}
-            isDetached
             contentId={contentId}
+            isDetached
+            isExpanded={isExpanded}
             toggleId={toggleId}
           >
             {expandedCode}
@@ -75,10 +75,10 @@ export const CodeBlockWithClipboard: FC<CodeBlockWithClipboardProps> = ({
       </CodeBlockCode>
       {isExpandable && (
         <ExpandableSectionToggle
-          isExpanded={isExpanded}
-          onToggle={(isExpanded) => setIsExpanded(isExpanded)}
           contentId={contentId}
           direction="up"
+          isExpanded={isExpanded}
+          onToggle={(isExpanded) => setIsExpanded(isExpanded)}
           toggleId={toggleId}
         >
           {isExpanded ? t('Show less') : t('Show more')}
