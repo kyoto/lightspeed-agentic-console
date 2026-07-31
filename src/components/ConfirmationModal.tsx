@@ -36,22 +36,22 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
   return (
-    <Modal isOpen={isOpen} onClose={onClose} variant="small" aria-label={title}>
+    <Modal aria-label={title} isOpen={isOpen} onClose={onClose} variant="small">
       <ModalHeader title={title} />
       <ModalBody>
         {typeof body === 'string' ? <Content component={ContentVariants.p}>{body}</Content> : body}
-        {error && <Alert variant="danger" isInline title={error} />}
+        {error && <Alert isInline title={error} variant="danger" />}
       </ModalBody>
       <ModalFooter>
         <Button
-          variant={actionVariant}
-          onClick={onAction}
-          isLoading={isLoading}
           isDisabled={isLoading}
+          isLoading={isLoading}
+          onClick={onAction}
+          variant={actionVariant}
         >
           {actionLabel}
         </Button>
-        <Button variant="link" onClick={onClose} isDisabled={isLoading}>
+        <Button isDisabled={isLoading} onClick={onClose} variant="link">
           {t('Cancel')}
         </Button>
       </ModalFooter>

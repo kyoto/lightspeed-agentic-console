@@ -22,7 +22,7 @@ export const StageInProgress: FC<StageInProgressProps> = ({ title, sandbox, sinc
       </Flex>
     </CardHeader>
     <CardBody>
-      <SandboxLogViewer title={title} sandbox={sandbox} sinceTime={sinceTime} streaming />
+      <SandboxLogViewer sandbox={sandbox} sinceTime={sinceTime} streaming title={title} />
     </CardBody>
   </Card>
 );

@@ -79,13 +79,13 @@ const AgentsTab: React.FC = () => {
   return (
     <>
       {(error || agentsError) && (
-        <Alert variant="danger" isInline title={t('Error')}>
+        <Alert isInline title={t('Error')} variant="danger">
           {error || String(agentsError)}
         </Alert>
       )}
 
       <div className="ols-plugin__config-table-actions">
-        <Button variant="primary" onClick={() => setShowForm(true)} isDisabled={showForm}>
+        <Button isDisabled={showForm} onClick={() => setShowForm(true)} variant="primary">
           {t('Create Agent')}
         </Button>
       </div>
@@ -116,19 +116,19 @@ const AgentsTab: React.FC = () => {
                   <Dropdown
                     isOpen={openKebab === a.metadata.name}
                     onOpenChange={(open) => setOpenKebab(open ? a.metadata.name : null)}
+                    popperProps={{ position: 'right' }}
                     toggle={(toggleRef) => (
                       <MenuToggle
-                        ref={toggleRef}
-                        variant="plain"
+                        isExpanded={openKebab === a.metadata.name}
                         onClick={() =>
                           setOpenKebab(openKebab === a.metadata.name ? null : a.metadata.name)
                         }
-                        isExpanded={openKebab === a.metadata.name}
+                        ref={toggleRef}
+                        variant="plain"
                       >
                         <EllipsisVIcon />
                       </MenuToggle>
                     )}
-                    popperProps={{ position: 'right' }}
                   >
                     <DropdownList>
                       <DropdownItem key="delete" onClick={() => handleDelete(a)}>
@@ -149,9 +149,9 @@ const AgentsTab: React.FC = () => {
 
       {showForm && (
         <AgentForm
-          providers={providers || []}
-          onSubmit={handleCreate}
           onCancel={() => setShowForm(false)}
+          onSubmit={handleCreate}
+          providers={providers || []}
         />
       )}
     </>

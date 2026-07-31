@@ -76,13 +76,13 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
     <Toolbar>
       <ToolbarContent>
         <ToolbarItem>
-          <LogViewerSearch placeholder={t('Search logs...')} minSearchChars={2} />
+          <LogViewerSearch minSearchChars={2} placeholder={t('Search logs...')} />
         </ToolbarItem>
         <ToolbarItem alignSelf="center">
           <Checkbox
             id={`health-check-filter-${title}`}
-            label={t('Hide health checks')}
             isChecked={hideHealthChecks}
+            label={t('Hide health checks')}
             onChange={(_e, checked) => setHideHealthChecks(checked)}
           />
         </ToolbarItem>
@@ -92,22 +92,21 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
 
   const footer =
     !isFollowing && streaming ? (
-      <Button variant="link" onClick={() => setIsFollowing(true)}>
+      <Button onClick={() => setIsFollowing(true)} variant="link">
         {t('Resume auto-scroll')}
       </Button>
     ) : undefined;
 
   return (
     <ExpandableSection
+      isExpanded={isExpanded}
+      onToggle={(_e, expanded) => setIsExpanded(expanded)}
       toggleText={
         isExpanded ? t('Hide {{title}} logs', { title }) : t('View {{title}} logs', { title })
       }
-      onToggle={(_e, expanded) => setIsExpanded(expanded)}
-      isExpanded={isExpanded}
     >
-      {error && <Alert variant="warning" isInline isPlain title={error} />}
+      {error && <Alert isInline isPlain title={error} variant="warning" />}
       <LogViewer
-        innerRef={logViewerRef}
         data={
           error
             ? t('Failed to load logs.')
@@ -115,12 +114,13 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
               ? t('Loading logs...')
               : logData || t('No logs available.')
         }
-        isTextWrapped
-        height={400}
-        hasLineNumbers
-        toolbar={toolbar}
         footer={footer}
+        hasLineNumbers
+        height={400}
+        innerRef={logViewerRef}
+        isTextWrapped
         onScroll={handleScroll}
+        toolbar={toolbar}
       />
     </ExpandableSection>
   );

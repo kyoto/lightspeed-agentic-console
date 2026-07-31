@@ -70,10 +70,10 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
               {!isPending && analysisSandbox && (
                 <FlexItem>
                   <SandboxLogViewer
-                    title={t('Analysis')}
                     sandbox={analysisSandbox}
                     sinceTime={analysisStartedAt}
                     streaming
+                    title={t('Analysis')}
                   />
                 </FlexItem>
               )}
@@ -89,16 +89,16 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
       <>
         <Card>
           <CardBody>
-            <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
               <FlexItem>
                 <MarkdownContent text={analysisRequest} />
               </FlexItem>
               {analysisSandbox && (
                 <FlexItem>
                   <SandboxLogViewer
-                    title={t('Analysis')}
                     sandbox={analysisSandbox}
                     sinceTime={analysisStartedAt}
+                    title={t('Analysis')}
                   />
                 </FlexItem>
               )}
@@ -107,7 +107,7 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
         </Card>
 
         {!hasRemediationOptions && rootCause && (
-          <Flex spaceItems={{ default: 'spaceItemsLg' }} direction={{ default: 'column' }}>
+          <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 <FlexItem>
@@ -147,9 +147,9 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
           </EmptyState>
           {analysisSandbox && (
             <SandboxLogViewer
-              title={t('Analysis')}
               sandbox={analysisSandbox}
               sinceTime={analysisStartedAt}
+              title={t('Analysis')}
             />
           )}
         </CardBody>

@@ -17,25 +17,25 @@ export const RunTimeline: FC<RunTimelineProps> = ({ events }) => {
   };
   return (
     <ExpandableSection
-      toggleWrapper="h4"
-      toggleText={t('Timeline')}
-      onToggle={onToggle}
       isExpanded={isExpanded}
+      onToggle={onToggle}
+      toggleText={t('Timeline')}
+      toggleWrapper="h4"
     >
       <ProgressStepper isVertical>
         {events.map((event, i) => (
           <ProgressStep
-            key={i}
-            id={`timeline-step-${i}`}
-            titleId={`timeline-step-title-${i}`}
-            variant={event.variant}
-            isCurrent={event.isCurrent}
             description={
               <>
                 {event.timestamp && <Timestamp simple timestamp={event.timestamp} />}
                 {event.description && <> — {event.description}</>}
               </>
             }
+            id={`timeline-step-${i}`}
+            isCurrent={event.isCurrent}
+            key={i}
+            titleId={`timeline-step-title-${i}`}
+            variant={event.variant}
           >
             {event.label}
           </ProgressStep>

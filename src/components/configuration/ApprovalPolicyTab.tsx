@@ -115,25 +115,25 @@ const ApprovalPolicyTab: React.FC = () => {
   return (
     <>
       {error && (
-        <Alert variant="danger" isInline title={t('Error saving approval policy')}>
+        <Alert isInline title={t('Error saving approval policy')} variant="danger">
           {error}
         </Alert>
       )}
-      {success && <Alert variant="success" isInline title={success} />}
+      {success && <Alert isInline title={success} variant="success" />}
 
       {STAGES.map((stage) => (
-        <div key={stage} className="ols-plugin__config-approval-row">
+        <div className="ols-plugin__config-approval-row" key={stage}>
           <span className="ols-plugin__config-approval-label">{t(stage)}</span>
           <ToggleGroup>
             <ToggleGroupItem
-              text={t('Manual')}
               isSelected={stageValues[stage] === 'Manual'}
               onChange={() => setStageValues((prev) => ({ ...prev, [stage]: 'Manual' }))}
+              text={t('Manual')}
             />
             <ToggleGroupItem
-              text={t('Automatic')}
               isSelected={stageValues[stage] === 'Automatic'}
               onChange={() => setStageValues((prev) => ({ ...prev, [stage]: 'Automatic' }))}
+              text={t('Automatic')}
             />
           </ToggleGroup>
         </div>
@@ -142,20 +142,20 @@ const ApprovalPolicyTab: React.FC = () => {
       <div className="ols-plugin__config-max-attempts">
         <span className="ols-plugin__config-approval-label">{t('Max retry attempts')}</span>
         <NumberInput
-          value={maxAttempts}
-          min={1}
           max={3}
-          onMinus={() => setMaxAttempts((v) => Math.max(1, v - 1))}
-          onPlus={() => setMaxAttempts((v) => Math.min(3, v + 1))}
+          min={1}
           onChange={(e) => {
             const val = Number((e.target as HTMLInputElement).value);
             if (val >= 1 && val <= 3) setMaxAttempts(val);
           }}
+          onMinus={() => setMaxAttempts((v) => Math.max(1, v - 1))}
+          onPlus={() => setMaxAttempts((v) => Math.min(3, v + 1))}
+          value={maxAttempts}
         />
       </div>
 
       <div className="ols-plugin__config-form-actions">
-        <Button variant="primary" onClick={handleSave} isLoading={saving} isDisabled={saving}>
+        <Button isDisabled={saving} isLoading={saving} onClick={handleSave} variant="primary">
           {t('Save')}
         </Button>
       </div>

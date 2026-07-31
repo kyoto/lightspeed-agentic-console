@@ -23,8 +23,8 @@ const StatusGuard: FC<StatusGuardProps> = ({ data, loaded, loadError, label, chi
     if (code === 403) {
       return (
         <ErrorState
-          titleText={t('Restricted access')}
           bodyText={t("You don't have permission to view this {{label}}.", { label })}
+          titleText={t('Restricted access')}
         />
       );
     }
@@ -33,8 +33,8 @@ const StatusGuard: FC<StatusGuardProps> = ({ data, loaded, loadError, label, chi
     }
     return (
       <ErrorState
-        titleText={t('Unable to load {{label}}', { label })}
         bodyText={loadError.message}
+        titleText={t('Unable to load {{label}}', { label })}
       />
     );
   }

@@ -141,7 +141,7 @@ const RunDetailPage: FC = () => {
 
       case 'NoActionRequired':
         return (
-          <Alert variant="info" isInline title={t('No remediation needed')}>
+          <Alert isInline title={t('No remediation needed')} variant="info">
             {t('Analysis determined that no action is required for this run.')}
           </Alert>
         );
@@ -153,25 +153,25 @@ const RunDetailPage: FC = () => {
               <>
                 {v.advisory && (
                   <Alert
-                    variant="info"
                     isInline
                     title={t(
                       'This is an advisory-only run. Review the recommendations below and apply changes externally.',
                     )}
+                    variant="info"
                   />
                 )}
                 {v.options.map((option) => (
                   <RemediationOptionCard
-                    key={option.index}
-                    option={option}
-                    isExpanded={expandedOption === option.index}
-                    isSelected={selectedOption === option.index}
-                    onSelect={() => selectOption(option.index)}
-                    onToggleExpand={() => selectOption(option.index)}
-                    onExecute={v.advisory ? undefined : openExecuteModal}
                     canApprove={canApprove}
                     canApproveLoading={canApproveLoading}
+                    isExpanded={expandedOption === option.index}
+                    isSelected={selectedOption === option.index}
+                    key={option.index}
                     mutationInProgress={mutationInProgress}
+                    onExecute={v.advisory ? undefined : openExecuteModal}
+                    onSelect={() => selectOption(option.index)}
+                    onToggleExpand={() => selectOption(option.index)}
+                    option={option}
                   />
                 ))}
               </>
@@ -206,9 +206,9 @@ const RunDetailPage: FC = () => {
             {renderOptionCards({ showSpinner: true })}
             {v.executionSandbox && (
               <StageInProgress
-                title={t('Execution')}
                 sandbox={v.executionSandbox}
                 sinceTime={v.executionStartedAt}
+                title={t('Execution')}
               />
             )}
           </>
@@ -221,9 +221,9 @@ const RunDetailPage: FC = () => {
             {v.execution && <ExecutionSummary execution={v.execution} />}
             {v.verificationSandbox && (
               <StageInProgress
-                title={t('Verification')}
                 sandbox={v.verificationSandbox}
                 sinceTime={v.verificationStartedAt}
+                title={t('Verification')}
               />
             )}
           </>
@@ -251,11 +251,11 @@ const RunDetailPage: FC = () => {
       if (executedOption) {
         return (
           <RemediationOptionCard
-            option={executedOption}
             isExpanded={expandedOption === executedOption.index}
             isSelected
             onSelect={() => selectOption(executedOption.index)}
             onToggleExpand={() => selectOption(executedOption.index)}
+            option={executedOption}
             readOnly
             showSpinner={opts.showSpinner}
           />
@@ -264,12 +264,12 @@ const RunDetailPage: FC = () => {
     }
     return view.options.map((option) => (
       <RemediationOptionCard
-        key={option.index}
-        option={option}
         isExpanded={expandedOption === option.index}
         isSelected={selectedOption === option.index}
+        key={option.index}
         onSelect={() => selectOption(option.index)}
         onToggleExpand={() => selectOption(option.index)}
+        option={option}
         readOnly
         showSpinner={opts.showSpinner && selectedOption === option.index}
       />
@@ -288,14 +288,14 @@ const RunDetailPage: FC = () => {
         loadError={runError}
       >
         <PageGroup>
-          <PageSection type="breadcrumb" hasBodyWrapper={false}>
+          <PageSection hasBodyWrapper={false} type="breadcrumb">
             <Breadcrumb>
               <BreadcrumbItem
-                to="#"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate('/lightspeed/runs');
                 }}
+                to="#"
               >
                 {t('Agentic runs')}
               </BreadcrumbItem>
@@ -306,8 +306,8 @@ const RunDetailPage: FC = () => {
             <Content>
               <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
                 <Flex
-                  spaceItems={{ default: 'spaceItemsSm' }}
                   alignItems={{ default: 'alignItemsCenter' }}
+                  spaceItems={{ default: 'spaceItemsSm' }}
                 >
                   <FlexItem>
                     <ResourceIcon groupVersionKind={LightspeedAgenticRunGVK} />
@@ -350,10 +350,10 @@ const RunDetailPage: FC = () => {
               </Flex>
             </Content>
 
-            {view?.failureReason && <Alert variant="danger" isInline title={view.failureReason} />}
+            {view?.failureReason && <Alert isInline title={view.failureReason} variant="danger" />}
 
             {resultsError && (
-              <Alert variant="warning" isInline title={t('Unable to load analysis results.')} />
+              <Alert isInline title={t('Unable to load analysis results.')} variant="warning" />
             )}
           </PageSection>
 
@@ -383,7 +383,6 @@ const RunDetailPage: FC = () => {
               <FlexItem>
                 <Popover
                   aria-label="Analysis request info"
-                  headerContent={<div>{t('Analysis request')}</div>}
                   bodyContent={
                     <div>
                       {t(
@@ -391,6 +390,7 @@ const RunDetailPage: FC = () => {
                       )}
                     </div>
                   }
+                  headerContent={<div>{t('Analysis request')}</div>}
                 >
                   <Button
                     aria-label="Analysis request info"
@@ -405,18 +405,18 @@ const RunDetailPage: FC = () => {
             ) : view ? (
               <AnalysisSummary
                 analysisRequest={view.request}
-                phase={view.phase}
                 analysisSandbox={view.analysisSandbox}
                 analysisStartedAt={view.analysisStartedAt}
                 hasRemediationOptions={view.options.length > 0}
+                phase={view.phase}
                 rootCause={view.rootCause}
               />
             ) : null}
 
             <Flex
-              spaceItems={{ default: 'spaceItemsXs' }}
               direction={{ default: 'column' }}
               gap={{ default: 'gapXs' }}
+              spaceItems={{ default: 'spaceItemsXs' }}
             >
               <Flex>
                 <FlexItem>
@@ -453,12 +453,8 @@ const RunDetailPage: FC = () => {
       </StatusGuard>
 
       <ConfirmationModal
-        isOpen={executeOptionIndex !== null}
-        onClose={() => {
-          setExecuteOptionIndex(null);
-          clearMutationError();
-        }}
-        title={t('Execute remediation?')}
+        actionLabel={t('Execute remediation')}
+        actionVariant="danger"
         body={
           <Flex direction={{ default: 'column' }}>
             <FlexItem>
@@ -473,10 +469,10 @@ const RunDetailPage: FC = () => {
             {optionData?.reversibility && optionData.reversibility !== 'Reversible' && (
               <FlexItem>
                 <Alert
-                  variant="warning"
                   title={t('This action is {{ reversibility }}', {
                     reversibility: getReversibilityText(optionData?.reversibility ?? '', t),
                   })}
+                  variant="warning"
                 >
                   <p>{getReversibilityDescription(optionData?.reversibility ?? '', t)}</p>
                 </Alert>
@@ -501,28 +497,32 @@ const RunDetailPage: FC = () => {
             </FlexItem>
           </Flex>
         }
-        actionLabel={t('Execute remediation')}
-        actionVariant="danger"
-        onAction={handleApproveExecution}
-        isLoading={mutationInProgress}
         error={mutationError}
+        isLoading={mutationInProgress}
+        isOpen={executeOptionIndex !== null}
+        onAction={handleApproveExecution}
+        onClose={() => {
+          setExecuteOptionIndex(null);
+          clearMutationError();
+        }}
+        title={t('Execute remediation?')}
       />
 
       <ConfirmationModal
+        actionLabel={t('Deny Run')}
+        actionVariant="danger"
+        body={t(
+          'Denying this run will cancel all proposed automated actions. The associated alerts must then be investigated and resolved manually.',
+        )}
+        error={mutationError}
+        isLoading={mutationInProgress}
         isOpen={isDenyModalOpen}
+        onAction={handleDenyExecution}
         onClose={() => {
           setIsDenyModalOpen(false);
           clearMutationError();
         }}
         title={t('Confirm remediation denial')}
-        body={t(
-          'Denying this run will cancel all proposed automated actions. The associated alerts must then be investigated and resolved manually.',
-        )}
-        actionLabel={t('Deny Run')}
-        actionVariant="danger"
-        onAction={handleDenyExecution}
-        isLoading={mutationInProgress}
-        error={mutationError}
       />
     </AgenticLayout>
   );

@@ -109,7 +109,7 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
                   <FlexItem key={i}>
                     <Card isCompact>
                       <CardBody>
-                        <Flex gap={{ default: 'gapSm' }} direction={{ default: 'column' }}>
+                        <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
                           <FlexItem>
                             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                               <FlexItem>
@@ -132,7 +132,7 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
                           </FlexItem>
                           {action.error && (
                             <FlexItem>
-                              <Alert variant="danger" isInline isPlain title={action.error} />
+                              <Alert isInline isPlain title={action.error} variant="danger" />
                             </FlexItem>
                           )}
                           {action.output && (
@@ -152,9 +152,9 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
           {execution.executionSandbox && (
             <FlexItem>
               <SandboxLogViewer
-                title={t('Execution')}
                 sandbox={execution.executionSandbox}
                 sinceTime={execution.executionStartedAt}
+                title={t('Execution')}
               />
             </FlexItem>
           )}

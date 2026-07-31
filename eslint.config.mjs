@@ -27,6 +27,7 @@ export default tseslint.config(
       'no-unused-vars': 'off',
       'prefer-arrow-callback': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'react/jsx-sort-props': ['error', { ignoreCase: true }],
       'sort-imports': ['error', { ignoreCase: true, ignoreDeclarationSort: true }],
     },
     languageOptions: {
