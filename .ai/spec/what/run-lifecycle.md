@@ -31,10 +31,10 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 ### Run Detail — Layout
 
 10. The detail page MUST display content progressively as data becomes available. The run header (breadcrumb, title, phase label, creation timestamp, failure/results alerts) MUST render immediately without waiting for result CRs. The detail section (RCA, remediation hub, timeline) MUST be gated behind a loading/error guard (`StatusGuard`): show a spinner while loading, an error state on failure (403 → restricted access, 404 → not found, other → error message with detail), and the section content when data is ready. `AnalysisSummary` MUST be gated on `view` (available once the run CR loads), not on `resultsLoaded`, so the analysis request prompt and analysis phase state display without waiting for all result CRs. Remediation hub and timeline remain gated on `resultsLoaded`.
-11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis request, Remediation options, Execution summary, Verification summary, and Timeline.
+11. The detail page uses a single-page section layout (not tabs). Sections are rendered conditionally based on the current phase: Analysis request, Remediation options, Execution summary, Verification summary, Escalation summary, and Timeline.
 11a. Legal disclaimer banner — persistent info alert below the detail page title/status: "OpenShift Lightspeed uses AI technology to help generate remediation plans. Always review AI-generated content prior to use."
-11b. AI-generated content labeling — section headings for AI-generated content (Root cause analysis, Remediation hub, Verification summary) MUST display a compact "AI-generated" label inline next to the heading text.
-12. During in-progress stages (Analyzing, Executing, Verifying), the page MUST show a `StageInProgress` card with embedded live log streaming from the sandbox pod.
+11b. AI-generated content labeling — section headings for AI-generated content (Root cause analysis, Remediation hub, Verification summary, Escalation summary) MUST display a compact "AI-generated" label inline next to the heading text.
+12. During in-progress stages (Analyzing, Executing, Verifying, Escalating), the page MUST show a `StageInProgress` card with embedded live log streaming from the sandbox pod, unless a manual approval gate for that stage is pending (`StageApprovalBanner` is shown instead).
 13. The page MUST be wrapped in `AgenticLayout` to display the system-suspended banner when the agentic config has `suspended: true`.
 
 ### Approval Flow
@@ -78,7 +78,11 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 
 29. Verification failure enables an "Escalate" button that opens a confirmation modal.
 30. Escalation approval creates an Escalation stage in the `AgenticRunApproval` CR.
-31. Escalation results display a summary and optionally the full escalation content in an expandable section.
+31. The detail page watches `EscalationResult` CRs via the same label-selector pattern as other result CRs (`agentic.openshift.io/run`) and maps them into the run view (`EscalationView`).
+32. While the run is in the `Escalating` phase: if escalation requires manual approval, show `StageApprovalBanner`; otherwise show `StageInProgress` with sandbox log streaming from `status.steps.escalation.sandbox`.
+33. On terminal phases that include an escalation result, the page renders an `EscalationSummary` card. The card body is freeform AI-generated markdown from `EscalationResult.status.summary` and, when present and different, `status.content` — rendered as unmarked markdown (not titled subsections or an expandable section).
+34. `EscalationSummary` MUST NOT render when the mapped view has no `summary`, `content`, or escalation sandbox. Failure-only results (system/agent error with only `status.failureReason`) surface via the page-level danger alert that aggregates stage `failureReason` values, not as an empty card.
+35. Timeline events include Escalation started/completed conditions from the `EscalationResult` (same condition-to-event mapping as Analysis/Execution/Verification).
 
 ## Constraints
 

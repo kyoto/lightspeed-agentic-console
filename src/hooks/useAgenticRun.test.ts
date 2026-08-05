@@ -1,12 +1,21 @@
 import { describe, expect, test } from 'vitest';
 import {
   AgenticRunCondition,
+  AgenticRunK8s,
   AnalysisResultK8s,
   derivePhaseFromConditions,
+  EscalationResultK8s,
   ExecutionResultK8s,
   RemediationOption,
 } from '../models/agenticrun';
-import { filterLatest, mapExecution, mapOption, mapRootCause } from './useAgenticRun';
+import {
+  filterLatest,
+  mapEscalation,
+  mapExecution,
+  mapOption,
+  mapRootCause,
+  mapTimeline,
+} from './useAgenticRun';
 
 const makeCondition = (
   type: string,
@@ -378,5 +387,167 @@ describe('filterLatest', () => {
       metadata: { name: 'new', creationTimestamp: '2025-06-15T12:00:00Z' },
     };
     expect(filterLatest([older, newer], undefined)).toBe(newer);
+  });
+});
+
+describe('mapEscalation', () => {
+  test('returns undefined when escalationResult is undefined', () => {
+    expect(mapEscalation(undefined)).toBeUndefined();
+  });
+
+  test('maps escalation result fields', () => {
+    const escalation: EscalationResultK8s = {
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'EscalationResult',
+      metadata: { name: 'esc-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: {
+        summary: 'Verification failed after remediation',
+        content: 'The pod was patched but the alert persisted. Recommend manual investigation.',
+        failureReason: undefined,
+        conditions: [
+          {
+            type: 'Started',
+            status: 'True',
+            lastTransitionTime: '2026-01-01T10:00:00Z',
+          },
+          {
+            type: 'Completed',
+            status: 'True',
+            reason: 'Succeeded',
+            lastTransitionTime: '2026-01-01T10:01:00Z',
+          },
+        ],
+      },
+    };
+    const result = mapEscalation(escalation);
+    expect(result).toBeDefined();
+    expect(result!.summary).toBe('Verification failed after remediation');
+    expect(result!.content).toBe(
+      'The pod was patched but the alert persisted. Recommend manual investigation.',
+    );
+    expect(result!.failureReason).toBeUndefined();
+    expect(result!.escalationStartedAt).toBe('2026-01-01T10:00:00Z');
+  });
+
+  test('maps sandbox info when provided', () => {
+    const escalation: EscalationResultK8s = {
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'EscalationResult',
+      metadata: { name: 'esc-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: { summary: 'Summary' },
+    };
+    const sandbox = { claimName: 'sandbox-pod', namespace: 'test-ns' };
+    const result = mapEscalation(escalation, sandbox);
+    expect(result!.escalationSandbox).toEqual({ podName: 'sandbox-pod', namespace: 'test-ns' });
+  });
+
+  test('maps failureReason when escalation step itself fails', () => {
+    const escalation: EscalationResultK8s = {
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'EscalationResult',
+      metadata: { name: 'esc-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: { failureReason: 'Sandbox timeout after 120s' },
+    };
+    const result = mapEscalation(escalation);
+    expect(result!.failureReason).toBe('Sandbox timeout after 120s');
+  });
+});
+
+describe('mapTimeline escalation events', () => {
+  const t = ((key: string) => key) as unknown as Parameters<typeof mapTimeline>[2];
+
+  const makeRun = (conditions?: AgenticRunCondition[]): AgenticRunK8s =>
+    ({
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'AgenticRun',
+      metadata: { name: 'run-1', namespace: 'default', creationTimestamp: '2026-01-01T00:00:00Z' },
+      spec: { request: 'Fix alert' },
+      status: { conditions },
+    }) as AgenticRunK8s;
+
+  test('includes escalation started and completed events', () => {
+    const escalation: EscalationResultK8s = {
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'EscalationResult',
+      metadata: { name: 'esc-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: {
+        conditions: [
+          {
+            type: 'Started',
+            status: 'True',
+            lastTransitionTime: '2026-01-01T10:00:00Z',
+          },
+          {
+            type: 'Completed',
+            status: 'True',
+            reason: 'Succeeded',
+            message: 'Escalation complete',
+            lastTransitionTime: '2026-01-01T10:01:00Z',
+          },
+        ],
+      },
+    };
+
+    const run = makeRun([makeCondition('Escalated', 'True')]);
+    const events = mapTimeline(
+      run,
+      'Escalated',
+      t,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      escalation,
+    );
+
+    const escalationEvents = events.filter(
+      (e) => e.label.includes('Escalation') || e.label.includes('escalation'),
+    );
+    expect(escalationEvents.length).toBe(2);
+    expect(escalationEvents[0].label).toContain('started');
+    expect(escalationEvents[1].label).toContain('completed');
+    expect(escalationEvents[1].description).toBe('Escalation complete');
+  });
+
+  test('includes escalation failure reason in timeline event', () => {
+    const escalation: EscalationResultK8s = {
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'EscalationResult',
+      metadata: { name: 'esc-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: {
+        failureReason: 'Sandbox crashed',
+        conditions: [
+          {
+            type: 'Completed',
+            status: 'True',
+            reason: 'Failed',
+            lastTransitionTime: '2026-01-01T10:01:00Z',
+          },
+        ],
+      },
+    };
+
+    const run = makeRun([makeCondition('Escalated', 'True')]);
+    const events = mapTimeline(
+      run,
+      'Escalated',
+      t,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      escalation,
+    );
+
+    const failedEvent = events.find(
+      (e) => e.label.includes('Escalation') && e.variant === 'danger',
+    );
+    expect(failedEvent).toBeDefined();
+    expect(failedEvent!.description).toBe('Sandbox crashed');
   });
 });

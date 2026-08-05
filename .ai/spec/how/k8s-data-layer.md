@@ -34,7 +34,7 @@ useK8sWatchResource(AnalysisResultGVK, {namespace, selector: {matchLabels: {agen
 
 This pattern repeats for ExecutionResult, VerificationResult, and EscalationResult. The `results[]` array on each step status contains `{name, outcome}` refs — the name matches the result CR's `metadata.name`.
 
-The `useProposal` hook wraps all five watches (Proposal, AnalysisResult, ExecutionResult, VerificationResult, ProposalApproval) and uses `filterLatest` to select the most recent result CR by `creationTimestamp`. The mapped `ProposalView` is recomputed via `useMemo` whenever any watched resource changes.
+The `useAgenticRun` hook wraps watches for AgenticRun, AnalysisResult, ExecutionResult, VerificationResult, EscalationResult, and AgenticRunApproval, and uses `filterLatest` to select the most recent result CR by `creationTimestamp`. The mapped `AgenticRunView` is recomputed via `useMemo` whenever any watched resource changes.
 
 ### Approval Patch Generation
 
@@ -63,7 +63,7 @@ Every CRD has a paired `K8sModel` (used by Console SDK functions) and a `GVK` ob
 
 CRD types are hand-written, not generated. A TODO exists to auto-generate from OpenAPI. The types closely mirror the CRD status structure — changes in the operator's CRD require manual synchronization here.
 
-K8s intersection types (e.g., `ProposalK8s = LightspeedProposal & K8sResourceCommon`) are defined at the bottom of `proposal.ts` for use with `useK8sWatchResource` generics. A separate view-model layer in `proposal-views.ts` defines UI-optimized types (`ProposalView`, `RemediationOptionView`, etc.) with `*View` suffix. The `useProposal` hook in `src/hooks/useProposal.ts` contains pure mapping functions (`mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapTimeline`) that transform API types into view types. Phase derivation is centralized in `derivePhaseFromConditions` (defined in `proposal.ts`, used by both list and detail pages).
+K8s intersection types (e.g., `ProposalK8s = LightspeedProposal & K8sResourceCommon`) are defined at the bottom of `proposal.ts` for use with `useK8sWatchResource` generics. A separate view-model layer in `proposal-views.ts` defines UI-optimized types (`ProposalView`, `RemediationOptionView`, etc.) with `*View` suffix. The `useAgenticRun` hook in `src/hooks/useAgenticRun.ts` contains pure mapping functions (`mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapEscalation`, `mapTimeline`) that transform API types into view types. Phase derivation is centralized in `derivePhaseFromConditions` (defined in `proposal.ts`, used by both list and detail pages).
 
 ### Approval Logic
 

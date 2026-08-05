@@ -83,6 +83,14 @@ export interface ExecutionView {
   executionStartedAt?: string;
 }
 
+export interface EscalationView {
+  summary?: string;
+  content?: string;
+  failureReason?: string;
+  escalationSandbox?: SandboxView;
+  escalationStartedAt?: string;
+}
+
 export interface AgenticRunView {
   phase: AgenticRunPhase;
   request: string;
@@ -98,9 +106,12 @@ export interface AgenticRunView {
   executionSandbox?: SandboxView;
   verificationStartedAt?: string;
   verificationSandbox?: SandboxView;
+  escalationStartedAt?: string;
+  escalationSandbox?: SandboxView;
   executedOptionIndex?: number;
   options: RemediationOptionView[];
   execution?: ExecutionView;
   verification?: VerificationView;
+  escalation?: EscalationView;
   timeline: TimelineEvent[];
 }

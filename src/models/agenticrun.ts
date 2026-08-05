@@ -139,6 +139,23 @@ export const VerificationResultGVK = {
   version: VerificationResultModel.apiVersion,
 };
 
+export const EscalationResultModel: K8sModel = {
+  apiGroup: 'agentic.openshift.io',
+  apiVersion: 'v1alpha1',
+  kind: 'EscalationResult',
+  plural: 'escalationresults',
+  abbr: 'ESR',
+  namespaced: true,
+  label: 'EscalationResult',
+  labelPlural: 'EscalationResults',
+};
+
+export const EscalationResultGVK = {
+  group: EscalationResultModel.apiGroup,
+  kind: EscalationResultModel.kind,
+  version: EscalationResultModel.apiVersion,
+};
+
 export const AgenticOLSConfigModel: K8sModel = {
   apiGroup: 'agentic.openshift.io',
   apiVersion: 'v1alpha1',
@@ -755,3 +772,4 @@ export type AgenticRunApprovalK8s = LightspeedAgenticRunApproval & K8sResourceCo
 export type AnalysisResultK8s = AnalysisResultCR & K8sResourceCommon;
 export type ExecutionResultK8s = ExecutionResultCR & K8sResourceCommon;
 export type VerificationResultK8s = VerificationResultCR & K8sResourceCommon;
+export type EscalationResultK8s = EscalationResultCR & K8sResourceCommon;
