@@ -28,7 +28,6 @@ export interface RemediationOptionView {
   title: string;
   description: string;
   reversibility?: string;
-  risk?: string;
   estimatedImpact?: string;
   actions?: AgentAction[];
   rollbackDescription?: string;
