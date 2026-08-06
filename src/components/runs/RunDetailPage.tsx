@@ -32,7 +32,7 @@ import type { FC, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { useAgenticRun } from '../../hooks/useAgenticRun';
-import { LightspeedAgenticRunGVK } from '../../models/agenticrun';
+import { ApprovalStageType, LightspeedAgenticRunGVK } from '../../models/agenticrun';
 import type { AgenticRunView } from '../../models/agenticrun-views';
 import { TERMINAL_PHASES } from '../../models/agenticrun-views';
 import { getReversibilityDescription, getReversibilityText } from '../../utils/agenticrun-utils';
@@ -47,6 +47,7 @@ import { ExecutionSummary } from './detail/ExecutionSummary';
 import { RemediationOptionCard } from './detail/RemediationOptionCard';
 import { RunPhaseLabel } from './detail/RunPhaseLabel';
 import { RunTimeline } from './detail/RunTimeline';
+import { StageApprovalBanner } from './detail/StageApprovalBanner';
 import { StageInProgress } from './detail/StageInProgress';
 import { VerificationSummary } from './detail/VerificationSummary';
 
@@ -66,8 +67,10 @@ const RunDetailPage: FC = () => {
     resultsError,
     canApprove,
     canApproveLoading,
+    needsApproval,
+    approveStage,
     approveExecution,
-    denyExecution,
+    denyStage,
     mutationInProgress,
     mutationError,
     clearMutationError,
@@ -92,7 +95,7 @@ const RunDetailPage: FC = () => {
   }, []);
 
   const [executeOptionIndex, setExecuteOptionIndex] = useState<number | null>(null);
-  const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
+  const [denyingStage, setDenyingStage] = useState<ApprovalStageType | null>(null);
 
   const openExecuteModal = useCallback(() => {
     setExecuteOptionIndex(selectedOption);
@@ -104,10 +107,11 @@ const RunDetailPage: FC = () => {
     if (success) setExecuteOptionIndex(null);
   }, [approveExecution, executeOptionIndex]);
 
-  const handleDenyExecution = useCallback(async () => {
-    const success = await denyExecution();
-    if (success) setIsDenyModalOpen(false);
-  }, [denyExecution]);
+  const handleDeny = useCallback(async () => {
+    if (!denyingStage) return;
+    const success = await denyStage(denyingStage);
+    if (success) setDenyingStage(null);
+  }, [denyStage, denyingStage]);
 
   const optionData =
     executeOptionIndex !== null ? (view?.options[executeOptionIndex] ?? undefined) : undefined;
@@ -189,7 +193,7 @@ const RunDetailPage: FC = () => {
                     canApprove={canApprove}
                     canApproveLoading={canApproveLoading}
                     mutationInProgress={mutationInProgress}
-                    onClick={() => setIsDenyModalOpen(true)}
+                    onClick={() => setDenyingStage('Execution')}
                     variant="secondary"
                   >
                     {t('Deny run')}
@@ -219,19 +223,49 @@ const RunDetailPage: FC = () => {
           <>
             {renderOptionCards({})}
             {v.execution && <ExecutionSummary execution={v.execution} />}
-            {v.verificationSandbox && (
-              <StageInProgress
-                sandbox={v.verificationSandbox}
-                sinceTime={v.verificationStartedAt}
-                title={t('Verification')}
+            {needsApproval.Verification ? (
+              <StageApprovalBanner
+                canApprove={canApprove}
+                canApproveLoading={canApproveLoading}
+                mutationError={mutationError}
+                mutationInProgress={mutationInProgress}
+                onApprove={() => approveStage('Verification')}
+                onClearError={clearMutationError}
+                stageType="Verification"
               />
+            ) : (
+              v.verificationSandbox && (
+                <StageInProgress
+                  sandbox={v.verificationSandbox}
+                  sinceTime={v.verificationStartedAt}
+                  title={t('Verification')}
+                />
+              )
             )}
           </>
         );
 
       case 'Escalating':
+        return (
+          <>
+            {v.options.length > 0 && renderOptionCards({})}
+            {v.execution && <ExecutionSummary execution={v.execution} />}
+            {v.verification && <VerificationSummary verification={v.verification} />}
+            {needsApproval.Escalation && (
+              <StageApprovalBanner
+                canApprove={canApprove}
+                canApproveLoading={canApproveLoading}
+                mutationError={mutationError}
+                mutationInProgress={mutationInProgress}
+                onApprove={() => approveStage('Escalation')}
+                onClearError={clearMutationError}
+                stageType="Escalation"
+              />
+            )}
+          </>
+        );
       default:
-        if (v.phase === 'Escalating' || TERMINAL_PHASES.includes(v.phase)) {
+        if (TERMINAL_PHASES.includes(v.phase)) {
           return (
             <>
               {v.options.length > 0 && renderOptionCards({})}
@@ -407,7 +441,14 @@ const RunDetailPage: FC = () => {
                 analysisRequest={view.request}
                 analysisSandbox={view.analysisSandbox}
                 analysisStartedAt={view.analysisStartedAt}
+                canApprove={canApprove}
+                canApproveLoading={canApproveLoading}
                 hasRemediationOptions={view.options.length > 0}
+                mutationError={mutationError}
+                mutationInProgress={mutationInProgress}
+                needsApproval={needsApproval.Analysis}
+                onApproveAnalysis={() => approveStage('Analysis')}
+                onClearError={clearMutationError}
                 phase={view.phase}
                 rootCause={view.rootCause}
               />
@@ -447,6 +488,32 @@ const RunDetailPage: FC = () => {
             ) : view ? (
               renderRemediationHub(view)
             ) : null}
+
+            {resultsLoaded &&
+              view &&
+              !TERMINAL_PHASES.includes(view.phase) &&
+              view.phase !== 'Proposed' &&
+              (needsApproval.Analysis ||
+                needsApproval.Verification ||
+                needsApproval.Escalation) && (
+                <Flex>
+                  <FlexItem>
+                    <ApprovalGatedButton
+                      canApprove={canApprove}
+                      canApproveLoading={canApproveLoading}
+                      mutationInProgress={mutationInProgress}
+                      onClick={() => {
+                        if (needsApproval.Analysis) setDenyingStage('Analysis');
+                        else if (needsApproval.Verification) setDenyingStage('Verification');
+                        else if (needsApproval.Escalation) setDenyingStage('Escalation');
+                      }}
+                      variant="secondary"
+                    >
+                      {t('Deny run')}
+                    </ApprovalGatedButton>
+                  </FlexItem>
+                </Flex>
+              )}
 
             {resultsLoaded && view && view.timeline.length > 0 && (
               <RunTimeline events={view.timeline} />
@@ -515,17 +582,17 @@ const RunDetailPage: FC = () => {
         actionLabel={t('Deny run')}
         actionVariant="danger"
         body={t(
-          'Denying this run will cancel all proposed automated actions. The associated alerts must then be investigated and resolved manually.',
+          'Denying this run will stop all further actions. Are you sure you want to proceed?',
         )}
         error={mutationError}
         isLoading={mutationInProgress}
-        isOpen={isDenyModalOpen}
-        onAction={handleDenyExecution}
+        isOpen={denyingStage !== null}
+        onAction={handleDeny}
         onClose={() => {
-          setIsDenyModalOpen(false);
+          setDenyingStage(null);
           clearMutationError();
         }}
-        title={t('Confirm remediation denial')}
+        title={t('Confirm Deny')}
       />
     </AgenticLayout>
   );

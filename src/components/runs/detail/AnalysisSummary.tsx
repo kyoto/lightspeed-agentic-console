@@ -21,6 +21,7 @@ import {
 } from '../../../models/agenticrun-views';
 import { MarkdownContent } from '../../MarkdownContent';
 import { SandboxLogViewer } from './SandboxLogViewer';
+import { StageApprovalBanner } from './StageApprovalBanner';
 
 interface AnalysisSummaryProps {
   analysisRequest?: string;
@@ -29,7 +30,35 @@ interface AnalysisSummaryProps {
   phase: AgenticRunPhase;
   analysisSandbox?: SandboxView;
   analysisStartedAt?: string;
+  needsApproval?: boolean;
+  canApprove?: boolean;
+  canApproveLoading?: boolean;
+  mutationInProgress?: boolean;
+  mutationError?: string;
+  onApproveAnalysis?: () => Promise<boolean> | void;
+  onClearError?: () => void;
 }
+
+const LoadingSkeleton: FC<{ text: string }> = ({ text }) => {
+  return (
+    <Flex direction={{ default: 'column' }}>
+      <FlexItem>
+        <Content component={ContentVariants.small}>
+          <em>{text}</em>
+        </Content>
+      </FlexItem>
+      <FlexItem>
+        <Skeleton screenreaderText={text} width="70%" />
+      </FlexItem>
+      <FlexItem>
+        <Skeleton width="40%" />
+      </FlexItem>
+      <FlexItem>
+        <Skeleton width="50%" />
+      </FlexItem>
+    </Flex>
+  );
+};
 
 export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
   analysisRequest,
@@ -38,49 +67,79 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
   analysisStartedAt,
   hasRemediationOptions,
   rootCause,
+  needsApproval,
+  canApprove,
+  canApproveLoading,
+  mutationInProgress,
+  mutationError,
+  onApproveAnalysis,
+  onClearError,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
 
-  if (phase === 'Pending' || phase === 'Analyzing') {
-    const isPending = phase === 'Pending';
+  if (phase === 'Pending') {
+    if (needsApproval && onApproveAnalysis) {
+      return (
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+          {analysisRequest && (
+            <FlexItem>
+              <Card>
+                <CardBody>
+                  <MarkdownContent text={analysisRequest} />
+                </CardBody>
+              </Card>
+            </FlexItem>
+          )}
+          <FlexItem>
+            <StageApprovalBanner
+              canApprove={canApprove ?? false}
+              canApproveLoading={canApproveLoading ?? false}
+              mutationError={mutationError}
+              mutationInProgress={mutationInProgress ?? false}
+              onApprove={onApproveAnalysis}
+              onClearError={onClearError}
+              stageType="Analysis"
+            />
+          </FlexItem>
+        </Flex>
+      );
+    }
+
     return (
-      <>
-        <Card>
-          <CardBody>
-            <Flex direction={{ default: 'column' }}>
+      <Card>
+        <CardBody>
+          <LoadingSkeleton text={t('Waiting for analysis to start...')} />
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (phase === 'Analyzing') {
+    return (
+      <Card>
+        <CardBody>
+          <Flex direction={{ default: 'column' }}>
+            {analysisRequest && (
               <FlexItem>
-                <Content component={ContentVariants.small}>
-                  <em>{isPending ? t('Waiting for analysis to start...') : t('Analyzing...')}</em>
-                </Content>
+                <MarkdownContent text={analysisRequest} />
               </FlexItem>
+            )}
+            <FlexItem>
+              <LoadingSkeleton text={t('Analyzing ...')} />
+            </FlexItem>
+            {analysisSandbox && (
               <FlexItem>
-                <Skeleton
-                  screenreaderText={
-                    isPending ? t('Waiting for analysis to start...') : t('Loading analysis')
-                  }
-                  width="70%"
+                <SandboxLogViewer
+                  sandbox={analysisSandbox}
+                  sinceTime={analysisStartedAt}
+                  streaming
+                  title={t('Analysis')}
                 />
               </FlexItem>
-              <FlexItem>
-                <Skeleton width="40%" />
-              </FlexItem>
-              <FlexItem>
-                <Skeleton width="50%" />
-              </FlexItem>
-              {!isPending && analysisSandbox && (
-                <FlexItem>
-                  <SandboxLogViewer
-                    sandbox={analysisSandbox}
-                    sinceTime={analysisStartedAt}
-                    streaming
-                    title={t('Analysis')}
-                  />
-                </FlexItem>
-              )}
-            </Flex>
-          </CardBody>
-        </Card>
-      </>
+            )}
+          </Flex>
+        </CardBody>
+      </Card>
     );
   }
 
@@ -143,7 +202,7 @@ export const AnalysisSummary: FC<AnalysisSummaryProps> = ({
       <Card>
         <CardBody>
           <EmptyState>
-            <EmptyStateBody>{t('Root cause analysis was not completed.')}</EmptyStateBody>
+            <EmptyStateBody>{t('Analysis was not completed.')}</EmptyStateBody>
           </EmptyState>
           {analysisSandbox && (
             <SandboxLogViewer
