@@ -63,7 +63,6 @@ export const mapOption = (opt: RemediationOption, index: number): RemediationOpt
     title: opt.title,
     description: opt.remediationPlan?.description ?? opt.summary ?? '',
     reversibility: opt.remediationPlan?.reversible,
-    risk: opt.remediationPlan?.risk,
     estimatedImpact: opt.remediationPlan?.estimatedImpact,
     actions: opt.remediationPlan?.actions,
     rollbackDescription: rollback?.description,

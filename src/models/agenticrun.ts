@@ -313,7 +313,6 @@ export type AgenticRunStep = {
 
 export type AgentDiagnosis = {
   summary: string;
-  confidence: 'Low' | 'Medium' | 'High';
   rootCause: string;
 };
 
@@ -326,7 +325,6 @@ export type AgentAction = {
 export type AgentRemediationPlan = {
   description: string;
   actions: AgentAction[];
-  risk: 'Low' | 'Medium' | 'High' | 'Critical';
   reversible?: 'Reversible' | 'Irreversible' | 'Partial';
   estimatedImpact: string;
   rollbackPlan?: AgentRollbackPlan;

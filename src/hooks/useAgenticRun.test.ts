@@ -19,13 +19,11 @@ const makeOption = (overrides?: Partial<RemediationOption>): RemediationOption =
   summary: 'Restart the failing pod',
   diagnosis: {
     summary: 'Pod OOMKilled',
-    confidence: 'High',
     rootCause: 'Memory limit too low',
   },
   remediationPlan: {
     description: 'Increase memory limit',
     actions: [{ type: 'patch', description: 'Patch deployment' }],
-    risk: 'Low',
     reversible: 'Reversible',
     estimatedImpact: 'Minimal downtime',
     rollbackPlan: {
@@ -163,7 +161,6 @@ describe('mapRootCause', () => {
   test('prefers option diagnosis over top-level diagnosis', () => {
     const topDiagnosis = {
       summary: 'Top-level diagnosis',
-      confidence: 'Medium' as const,
       rootCause: 'Top-level root cause',
     };
     const opt = makeOption();
@@ -178,7 +175,6 @@ describe('mapRootCause', () => {
   test('falls back to top-level diagnosis when no options exist', () => {
     const topDiagnosis = {
       summary: 'No action needed',
-      confidence: 'High' as const,
       rootCause: 'False alarm',
     };
     const analysis = { status: { diagnosis: topDiagnosis } } as AnalysisResultK8s;
@@ -199,7 +195,6 @@ describe('mapOption', () => {
       title: 'Restart pod',
       description: 'Increase memory limit',
       reversibility: 'Reversible',
-      risk: 'Low',
       estimatedImpact: 'Minimal downtime',
       actions: [{ type: 'patch', description: 'Patch deployment' }],
       rollbackDescription: 'Revert memory limit',
@@ -214,7 +209,7 @@ describe('mapOption', () => {
     const result = mapOption(opt, 2);
     expect(result.index).toBe(2);
     expect(result.description).toBe('Just a summary');
-    expect(result.risk).toBeUndefined();
+    expect(result.estimatedImpact).toBeUndefined();
     expect(result.actions).toBeUndefined();
   });
 
