@@ -313,102 +313,112 @@ const RunDetailPage: FC = () => {
   return (
     <AgenticLayout>
       <DocumentTitle>
-        {t('{{name}} details', { name: run?.metadata?.name || t('Run') })}
+        {t('{{name}} details', { name: run?.metadata?.name || name || t('Run') })}
       </DocumentTitle>
-      <StatusGuard
-        data={run?.metadata?.name ? run : undefined}
-        label={t('Run')}
-        loaded={runLoaded}
-        loadError={runError}
-      >
-        <PageGroup>
-          <PageSection hasBodyWrapper={false} type="breadcrumb">
-            <Breadcrumb>
-              <BreadcrumbItem
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate('/lightspeed/runs');
-                }}
-                to="#"
+
+      <PageGroup>
+        <PageSection hasBodyWrapper={false}>
+          <Breadcrumb>
+            <BreadcrumbItem
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/lightspeed/runs');
+              }}
+              to="#"
+            >
+              {t('Agentic runs')}
+            </BreadcrumbItem>
+            <BreadcrumbItem isActive>{run?.metadata?.name ?? name}</BreadcrumbItem>
+          </Breadcrumb>
+        </PageSection>
+
+        <Divider />
+
+        <PageSection hasBodyWrapper={false}>
+          <Content>
+            <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
+              <Flex
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
               >
-                {t('Agentic runs')}
-              </BreadcrumbItem>
-              <BreadcrumbItem isActive>{run?.metadata?.name ?? name}</BreadcrumbItem>
-            </Breadcrumb>
-          </PageSection>
-          <PageSection hasBodyWrapper={false}>
-            <Content>
-              <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
-                <Flex
-                  alignItems={{ default: 'alignItemsCenter' }}
-                  spaceItems={{ default: 'spaceItemsSm' }}
-                >
-                  <FlexItem>
-                    <ResourceIcon groupVersionKind={LightspeedAgenticRunGVK} />
-                  </FlexItem>
-                  <FlexItem>
-                    <Title headingLevel="h1">{run?.metadata?.name}</Title>
-                  </FlexItem>
-                  <FlexItem>
-                    <PreviewBadge />
-                  </FlexItem>
-                  {view &&
-                    view.targetNamespaces?.map((ns) => (
-                      <FlexItem key={ns}>
-                        <ResourceLink kind="Namespace" name={ns} />
-                      </FlexItem>
-                    ))}
-                </Flex>
-                {view && (
-                  <FlexItem>
-                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                <FlexItem>
+                  <ResourceIcon groupVersionKind={LightspeedAgenticRunGVK} />
+                </FlexItem>
+                <FlexItem>
+                  <Title headingLevel="h1">{run?.metadata?.name || name}</Title>
+                </FlexItem>
+                <FlexItem>
+                  <PreviewBadge />
+                </FlexItem>
+                {view &&
+                  view.targetNamespaces?.map((ns) => (
+                    <FlexItem key={ns}>
+                      <ResourceLink kind="Namespace" name={ns} />
+                    </FlexItem>
+                  ))}
+              </Flex>
+              {view && (
+                <FlexItem>
+                  <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem>
+                      <RunPhaseLabel phase={view.phase} />
+                    </FlexItem>
+                    {view.source && (
                       <FlexItem>
-                        <RunPhaseLabel phase={view.phase} />
+                        <Label
+                          isCompact
+                          variant="outline"
+                        >{`${t('Trigger domain')}: ${view.source}`}</Label>
                       </FlexItem>
-                      {view.source && (
-                        <FlexItem>
-                          <Label
-                            isCompact
-                            variant="outline"
-                          >{`${t('Trigger domain')}: ${view.source}`}</Label>
-                        </FlexItem>
-                      )}
-                    </Flex>
-                  </FlexItem>
-                )}
-                <FlexItem>
-                  <Content component={ContentVariants.small}>
-                    {t('Created')} <Timestamp simple timestamp={run?.metadata?.creationTimestamp} />
-                  </Content>
+                    )}
+                  </Flex>
                 </FlexItem>
-              </Flex>
-            </Content>
+              )}
+              <FlexItem>
+                <Content component={ContentVariants.small}>
+                  {t('Created')} <Timestamp simple timestamp={run?.metadata?.creationTimestamp} />
+                </Content>
+              </FlexItem>
+            </Flex>
+          </Content>
 
-            {view?.failureReason && <Alert isInline title={view.failureReason} variant="danger" />}
+          {view?.failureReason && <Alert isInline title={view.failureReason} variant="danger" />}
 
-            {resultsError && (
-              <Alert isInline title={t('Unable to load analysis results.')} variant="warning" />
-            )}
-          </PageSection>
+          {resultsError && (
+            <Alert isInline title={t('Unable to load analysis results.')} variant="warning" />
+          )}
+        </PageSection>
 
-          <Divider />
+        <Divider />
 
+        <StatusGuard
+          data={run?.metadata?.name ? run : undefined}
+          label={t('Run')}
+          loaded={runLoaded}
+          loadError={runError}
+        >
           <PageSection hasBodyWrapper={false}>
-            <Title headingLevel="h3">{t('Agentic run details')}</Title>
+            <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
+              <FlexItem>
+                <Title headingLevel="h3">{t('Agentic run details')}</Title>
+              </FlexItem>
 
-            <small>
-              <Flex spaceItems={{ default: 'spaceItemsXs' }}>
-                <FlexItem>
-                  <InfoCircleIcon color="var(--pf-t--global--icon--color--status--info--default)" />
-                </FlexItem>
-                <FlexItem>
-                  {t(
-                    'The autonomous features of OpenShift Lightspeed use AI technology to generate output.',
-                  )}
-                  {t('Always review AI-generated content prior to use.')}
-                </FlexItem>
-              </Flex>
-            </small>
+              <FlexItem>
+                <small>
+                  <Flex spaceItems={{ default: 'spaceItemsXs' }}>
+                    <FlexItem>
+                      <InfoCircleIcon color="var(--pf-t--global--icon--color--status--info--default)" />
+                    </FlexItem>
+                    <FlexItem>
+                      {t(
+                        'The autonomous features of OpenShift Lightspeed use AI technology to generate output.',
+                      )}{' '}
+                      {t('Always review AI-generated content prior to use.')}
+                    </FlexItem>
+                  </Flex>
+                </small>
+              </FlexItem>
+            </Flex>
 
             <Flex spaceItems={{ default: 'spaceItemsXs' }}>
               <FlexItem>
@@ -434,9 +444,8 @@ const RunDetailPage: FC = () => {
                 </Popover>
               </FlexItem>
             </Flex>
-            {!resultsLoaded ? (
-              <Skeleton screenreaderText={t('Loading analysis request')} />
-            ) : view ? (
+
+            {view && (
               <AnalysisSummary
                 analysisRequest={view.request}
                 analysisSandbox={view.analysisSandbox}
@@ -452,7 +461,7 @@ const RunDetailPage: FC = () => {
                 phase={view.phase}
                 rootCause={view.rootCause}
               />
-            ) : null}
+            )}
 
             <Flex
               direction={{ default: 'column' }}
@@ -519,8 +528,8 @@ const RunDetailPage: FC = () => {
               <RunTimeline events={view.timeline} />
             )}
           </PageSection>
-        </PageGroup>
-      </StatusGuard>
+        </StatusGuard>
+      </PageGroup>
 
       <ConfirmationModal
         actionLabel={t('Execute remediation')}
