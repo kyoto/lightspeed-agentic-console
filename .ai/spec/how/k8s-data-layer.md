@@ -4,11 +4,11 @@
 
 | File | Key Symbols | Responsibility |
 |---|---|---|
-| `src/models/proposal.ts` | `LightspeedProposalModel`, `LightspeedProposalGVK`, all `*Model`/`*GVK` constants | K8sModel definitions for the Console SDK's watch/patch/create/delete functions |
-| `src/models/proposal.ts` | `LightspeedProposal`, `LightspeedProposalApproval`, `*ResultCR` types | TypeScript types for each CRD |
-| `src/models/proposal.ts` | `ProposalK8s`, `AnalysisResultK8s`, `ExecutionResultK8s`, `VerificationResultK8s`, `ProposalApprovalK8s` | K8s intersection types (`CRDType & K8sResourceCommon`) for `useK8sWatchResource` generics |
-| `src/models/proposal-views.ts` | `ProposalView`, `RemediationOptionView`, `ExecutionView`, `VerificationView` | View-model types — output of the API→view mapping layer |
-| `src/hooks/useProposal.ts` | `useProposal`, `mapToProposalView` | Fetches all proposal-related CRs and maps to a single `ProposalView` |
+| `src/models/agenticrun.ts` | `LightspeedAgenticRunModel`, `LightspeedAgenticRunGVK`, all `*Model`/`*GVK` constants | K8sModel definitions for the Console SDK's watch/patch/create/delete functions |
+| `src/models/agenticrun.ts` | `LightspeedAgenticRun`, `LightspeedAgenticRunApproval`, `*ResultCR` types | TypeScript types for each CRD |
+| `src/models/agenticrun.ts` | `AgenticRunK8s`, `AgenticRunApprovalK8s`, `AnalysisResultK8s`, `ExecutionResultK8s`, `VerificationResultK8s`, `EscalationResultK8s` | K8s intersection types (`CRDType & K8sResourceCommon`) for `useK8sWatchResource` generics |
+| `src/models/agenticrun-views.ts` | `AgenticRunView`, `RemediationOptionView`, `ExecutionView`, `VerificationView`, `EscalationView` | View-model types — output of the API→view mapping layer |
+| `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapToAgenticRunView` | Fetches all run-related CRs and maps to a single `AgenticRunView` |
 | `src/utils/approval.ts` | `buildApprovalPatch` | Generates JSON Patch arrays for `AgenticRunApproval` mutations |
 
 ## Data Flow
@@ -16,7 +16,7 @@
 ### AgenticRun Watching
 
 ```
-useK8sWatchResource(ProposalGVK, {name, namespace})
+useK8sWatchResource(LightspeedAgenticRunGVK, {name, namespace})
   → WebSocket watch on /apis/agentic.openshift.io/v1alpha1/namespaces/{ns}/agenticruns/{name}
   → Console SDK manages cache invalidation and re-renders
 ```
@@ -28,7 +28,7 @@ Result CRs are not watched by name. Instead:
 ```
 useK8sWatchResource(AnalysisResultGVK, {namespace, selector: {matchLabels: {agentic.openshift.io/run: name}}, isList: true})
   → Returns all AnalysisResults for this run
-  → getLatestResult(results, proposal.status.steps.analysis.results)
+  → filterLatest(results, run.status.steps.analysis.results)
     → Finds the result CR referenced by the last entry in the step's results array
 ```
 
@@ -57,19 +57,19 @@ consoleFetch(/api/kubernetes/.../pods/{pod}/log?container=agent&follow=true&time
 
 ### K8sModel Pattern
 
-Every CRD has a paired `K8sModel` (used by Console SDK functions) and a `GVK` object (used by `useK8sWatchResource`). The `K8sModel` includes `apiGroup`, `apiVersion`, `kind`, `plural`, `namespaced`, and display labels. These are defined once in `proposal.ts` and imported everywhere.
+Every CRD has a paired `K8sModel` (used by Console SDK functions) and a `GVK` object (used by `useK8sWatchResource`). The `K8sModel` includes `apiGroup`, `apiVersion`, `kind`, `plural`, `namespaced`, and display labels. These are defined once in `agenticrun.ts` and imported everywhere.
 
 ### Type Union Strategy
 
 CRD types are hand-written, not generated. A TODO exists to auto-generate from OpenAPI. The types closely mirror the CRD status structure — changes in the operator's CRD require manual synchronization here.
 
-K8s intersection types (e.g., `ProposalK8s = LightspeedProposal & K8sResourceCommon`) are defined at the bottom of `proposal.ts` for use with `useK8sWatchResource` generics. A separate view-model layer in `proposal-views.ts` defines UI-optimized types (`ProposalView`, `RemediationOptionView`, etc.) with `*View` suffix. The `useAgenticRun` hook in `src/hooks/useAgenticRun.ts` contains pure mapping functions (`mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapEscalation`, `mapTimeline`) that transform API types into view types. Phase derivation is centralized in `derivePhaseFromConditions` (defined in `proposal.ts`, used by both list and detail pages).
+K8s intersection types (e.g., `AgenticRunK8s = LightspeedAgenticRun & K8sResourceCommon`) are defined at the bottom of `agenticrun.ts` for use with `useK8sWatchResource` generics. A separate view-model layer in `agenticrun-views.ts` defines UI-optimized types (`AgenticRunView`, `RemediationOptionView`, etc.) with `*View` suffix. The `useAgenticRun` hook in `src/hooks/useAgenticRun.ts` contains pure mapping functions (`mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapEscalation`, `mapTimeline`) that transform API types into view types. Phase derivation is centralized in `derivePhaseFromConditions` (defined in `agenticrun.ts`, used by both list and detail pages).
 
 ### Approval Logic
 
-Approval logic is embedded in the `useProposal` hook — a single hook instance per detail page. It exposes:
+Approval logic is embedded in the `useAgenticRun` hook — a single hook instance per detail page. It exposes:
 - Read: `canApprove` / `canApproveLoading` → derived from `useAccessReview` on `agenticrunapprovals`
-- Write: `approveExecution(optionIndex, maxRetries)` / `denyExecution()` → `k8sPatch` with patches from `buildApprovalPatch`
+- Write: `approveStage(stageType)` / `denyExecution()` → `k8sPatch` with patches from `buildApprovalPatch`
 - State helpers: `stageNeedsApproval()` and `getStageStatus()` from `src/utils/approval.ts` are used internally
 
 There is no per-tab instantiation — the detail page uses a single-page sectioned layout.

@@ -27,7 +27,7 @@
 - `console.page/route` → maps a URL path to a React component via `$codeRef`
 - `console.navigation/href` → adds a nav link in the admin perspective
 
-The `$codeRef` value (e.g., `"ProposalListPage"`) MUST have a matching key in `package.json` → `consolePlugin.exposedModules` (e.g., `"ProposalListPage": "./components/proposals/ProposalListPage"`). The value is a path relative to `src/`.
+The `$codeRef` value (e.g., `"RunListPage"`) MUST have a matching key in `package.json` → `consolePlugin.exposedModules` (e.g., `"RunListPage": "./components/runs/RunListPage"`). The value is a path relative to `src/`.
 
 ## Key Abstractions
 
