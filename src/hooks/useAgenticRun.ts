@@ -14,7 +14,9 @@ import {
   AgenticRunPhase,
   AnalysisResultGVK,
   AnalysisResultK8s,
+  ApprovalStage,
   ApprovalStageType,
+  ApproverInfo,
   derivePhaseFromConditions,
   EscalationResultGVK,
   EscalationResultK8s,
@@ -33,6 +35,7 @@ import { buildApprovalPatch, stageNeedsApproval } from '../utils/approval';
 import {
   AgenticRunView,
   EscalationView,
+  ExecutionRecordView,
   ExecutionView,
   RemediationOptionView,
   RootCauseView,
@@ -309,6 +312,34 @@ export const filterLatest = <T extends K8sResourceCommon>(
   });
 };
 
+export const buildExecutionRecord = (
+  execStage: ApprovalStage | undefined,
+  options: RemediationOption[] | undefined,
+  approver: ApproverInfo | undefined,
+  executionStartedAt: string | undefined,
+): ExecutionRecordView | undefined => {
+  if (!execStage) return undefined;
+
+  const optionIndex = execStage.execution?.option;
+  const selectedOption = optionIndex !== undefined ? options?.[optionIndex]?.title : undefined;
+
+  const record: ExecutionRecordView = {
+    approvedAt: approver?.approvedAt ?? executionStartedAt,
+    approverUsername: approver?.username,
+    maxAttempts: execStage.execution?.maxAttempts,
+    selectedOption,
+  };
+
+  // approvedAt only renders nested inside the approverUsername row, so it can't
+  // stand on its own — guard on the fields that render independently.
+  const hasRenderableField =
+    record.approverUsername !== undefined ||
+    record.maxAttempts !== undefined ||
+    record.selectedOption !== undefined;
+
+  return hasRenderableField ? record : undefined;
+};
+
 const mapToAgenticRunView = (
   run: AgenticRunK8s | undefined,
   analysis: AnalysisResultK8s | undefined,
@@ -327,6 +358,21 @@ const mapToAgenticRunView = (
     execution?.status?.failureReason ??
     verification?.status?.failureReason ??
     escalation?.status?.failureReason;
+
+  const execStage = (approval?.spec?.stages ?? []).find((s) => s.type === 'Execution');
+  const executedOptionIndex = execStage?.execution?.option;
+
+  const mappedExecution = mapExecution(options, execution, run.status?.steps?.execution?.sandbox);
+
+  if (mappedExecution) {
+    const record = buildExecutionRecord(
+      execStage,
+      options,
+      approval?.spec?.approver,
+      mappedExecution.executionStartedAt,
+    );
+    if (record) mappedExecution.executionRecord = record;
+  }
 
   return {
     phase,
@@ -350,10 +396,9 @@ const mapToAgenticRunView = (
     escalationStartedAt: (escalation?.status?.conditions ?? []).find((c) => c.type === 'Started')
       ?.lastTransitionTime,
     escalationSandbox: mapSandbox(run.status?.steps?.escalation?.sandbox),
-    executedOptionIndex: (approval?.spec?.stages ?? []).find((s) => s.type === 'Execution')
-      ?.execution?.option,
+    executedOptionIndex,
     options: (options ?? []).map((opt, i) => mapOption(opt, i)),
-    execution: mapExecution(options, execution, run.status?.steps?.execution?.sandbox),
+    execution: mappedExecution,
     verification: mapVerification(verification, run.status?.steps?.verification?.sandbox),
     escalation: mapEscalation(escalation, run.status?.steps?.escalation?.sandbox),
     timeline: mapTimeline(run, phase, t, analysis, execution, verification, approval, escalation),

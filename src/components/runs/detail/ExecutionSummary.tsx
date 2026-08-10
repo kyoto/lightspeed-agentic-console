@@ -1,3 +1,4 @@
+import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
   Card,
@@ -71,6 +72,43 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
       </CardHeader>
       <CardBody>
         <Flex direction={{ default: 'column' }} gap={{ default: 'gapLg' }}>
+          {execution.executionRecord && (
+            <FlexItem>
+              <DescriptionList isHorizontal>
+                {execution.executionRecord.selectedOption && (
+                  <DescriptionListGroup>
+                    <DescriptionListTerm>{t('Selected option')}</DescriptionListTerm>
+                    <DescriptionListDescription>
+                      {execution.executionRecord.selectedOption}
+                    </DescriptionListDescription>
+                  </DescriptionListGroup>
+                )}
+                {execution.executionRecord.maxAttempts !== undefined && (
+                  <DescriptionListGroup>
+                    <DescriptionListTerm>{t('Max attempts')}</DescriptionListTerm>
+                    <DescriptionListDescription>
+                      {execution.executionRecord.maxAttempts}
+                    </DescriptionListDescription>
+                  </DescriptionListGroup>
+                )}
+                {execution.executionRecord.approverUsername && (
+                  <DescriptionListGroup>
+                    <DescriptionListTerm>{t('Approved by')}</DescriptionListTerm>
+                    <DescriptionListDescription>
+                      {execution.executionRecord.approverUsername}
+                      {execution.executionRecord.approvedAt && (
+                        <>
+                          {', '}
+                          <Timestamp simple timestamp={execution.executionRecord.approvedAt} />
+                        </>
+                      )}
+                    </DescriptionListDescription>
+                  </DescriptionListGroup>
+                )}
+              </DescriptionList>
+            </FlexItem>
+          )}
+
           {execution.originalRootCause && (
             <FlexItem>
               <Content component={ContentVariants.small}>{t('CONTEXTUAL EVIDENCE')}</Content>

@@ -3,12 +3,15 @@ import {
   AgenticRunCondition,
   AgenticRunK8s,
   AnalysisResultK8s,
+  ApprovalStage,
+  ApproverInfo,
   derivePhaseFromConditions,
   EscalationResultK8s,
   ExecutionResultK8s,
   RemediationOption,
 } from '../models/agenticrun';
 import {
+  buildExecutionRecord,
   filterLatest,
   mapEscalation,
   mapExecution,
@@ -290,6 +293,105 @@ describe('mapExecution', () => {
     expect(result).toBeDefined();
     expect(result!.outcome).toBe('Unknown');
     expect(result!.remediationDelta).toBe('');
+  });
+});
+
+describe('buildExecutionRecord', () => {
+  const makeExecStage = (execution?: ApprovalStage['execution']): ApprovalStage => ({
+    type: 'Execution',
+    ...(execution ? { execution } : {}),
+  });
+
+  const approver: ApproverInfo = {
+    username: 'alice',
+    approvedAt: '2026-01-01T09:00:00Z',
+  };
+
+  test('returns undefined when execStage is undefined', () => {
+    expect(buildExecutionRecord(undefined, [makeOption()], approver, undefined)).toBeUndefined();
+  });
+
+  test('returns undefined when no fields are defined', () => {
+    expect(buildExecutionRecord(makeExecStage(), undefined, undefined, undefined)).toBeUndefined();
+  });
+
+  test('returns undefined when only approvedAt would be set (nothing renders standalone)', () => {
+    const result = buildExecutionRecord(
+      makeExecStage(),
+      undefined,
+      undefined,
+      '2026-01-01T10:00:00Z',
+    );
+    expect(result).toBeUndefined();
+  });
+
+  test('resolves selectedOption from the executed option index', () => {
+    const options = [makeOption({ title: 'Scale up' }), makeOption({ title: 'Restart pod' })];
+    const result = buildExecutionRecord(
+      makeExecStage({ option: 1 }),
+      options,
+      undefined,
+      undefined,
+    );
+    expect(result).toEqual({ selectedOption: 'Restart pod' });
+  });
+
+  test('leaves selectedOption undefined when option index is out of range', () => {
+    const options = [makeOption({ title: 'Scale up' })];
+    const result = buildExecutionRecord(
+      makeExecStage({ option: 5 }),
+      options,
+      undefined,
+      undefined,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  test('leaves selectedOption undefined when option index is not set', () => {
+    const options = [makeOption({ title: 'Scale up' })];
+    const result = buildExecutionRecord(
+      makeExecStage({ maxAttempts: 3 }),
+      options,
+      undefined,
+      undefined,
+    );
+    expect(result).toEqual({ maxAttempts: 3 });
+  });
+
+  test('prefers approver approvedAt over executionStartedAt', () => {
+    const result = buildExecutionRecord(
+      makeExecStage(),
+      undefined,
+      approver,
+      '2026-01-01T10:00:00Z',
+    );
+    expect(result?.approvedAt).toBe('2026-01-01T09:00:00Z');
+  });
+
+  test('falls back to executionStartedAt when approver approvedAt is absent', () => {
+    const result = buildExecutionRecord(
+      makeExecStage(),
+      undefined,
+      { username: 'alice' },
+      '2026-01-01T10:00:00Z',
+    );
+    expect(result?.approvedAt).toBe('2026-01-01T10:00:00Z');
+  });
+
+  test('maps all fields together', () => {
+    const options = [makeOption({ title: 'Restart pod' })];
+    const result = buildExecutionRecord(
+      makeExecStage({ maxAttempts: 2, option: 0 }),
+      options,
+      approver,
+      '2026-01-01T10:00:00Z',
+    );
+    expect(result).toEqual({
+      approvedAt: '2026-01-01T09:00:00Z',
+      approverUsername: 'alice',
+      maxAttempts: 2,
+      selectedOption: 'Restart pod',
+    });
   });
 });
 
