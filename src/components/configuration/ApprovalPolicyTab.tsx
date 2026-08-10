@@ -18,6 +18,7 @@ import {
   LightspeedApprovalPolicyModel,
   SandboxStepName,
 } from '../../models/agenticrun';
+import ExecutionPolicyModal from './ExecutionPolicyModal';
 
 const STAGES: SandboxStepName[] = ['Analysis', 'Execution', 'Verification', 'Escalation'];
 
@@ -46,6 +47,7 @@ const ApprovalPolicyTab: React.FC = () => {
     Escalation: 'Manual',
   });
   const [maxAttempts, setMaxAttempts] = React.useState(1);
+  const [isExecutionModalOpen, setIsExecutionModalOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
@@ -132,12 +134,30 @@ const ApprovalPolicyTab: React.FC = () => {
             />
             <ToggleGroupItem
               isSelected={stageValues[stage] === 'Automatic'}
-              onChange={() => setStageValues((prev) => ({ ...prev, [stage]: 'Automatic' }))}
+              onChange={() => {
+                if (stage === 'Execution' && stageValues[stage] === 'Manual') {
+                  setIsExecutionModalOpen(true);
+                  return;
+                }
+                setStageValues((prev) => ({ ...prev, [stage]: 'Automatic' }));
+              }}
               text={t('Automatic')}
             />
           </ToggleGroup>
         </div>
       ))}
+      <ExecutionPolicyModal
+        isOpen={isExecutionModalOpen}
+        onClose={() => {
+          setIsExecutionModalOpen(false);
+          //Clear focus on the "Automatic" button, so it doesn't look selected
+          requestAnimationFrame(() => (document.activeElement as HTMLElement)?.blur());
+        }}
+        onConfirm={() => {
+          setStageValues((prev) => ({ ...prev, Execution: 'Automatic' }));
+          setIsExecutionModalOpen(false);
+        }}
+      />
 
       <div className="ols-plugin__config-max-attempts">
         <span className="ols-plugin__config-approval-label">{t('Max retry attempts')}</span>
