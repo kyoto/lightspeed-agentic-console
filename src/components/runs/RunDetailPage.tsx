@@ -43,6 +43,7 @@ import { MarkdownContent } from '../MarkdownContent';
 import PreviewBadge from '../PreviewBadge';
 import StatusGuard from '../StatusGuard';
 import { AnalysisSummary } from './detail/AnalysisSummary';
+import { EscalationSummary } from './detail/EscalationSummary';
 import { ExecutionSummary } from './detail/ExecutionSummary';
 import { RemediationOptionCard } from './detail/RemediationOptionCard';
 import { RunPhaseLabel } from './detail/RunPhaseLabel';
@@ -251,7 +252,7 @@ const RunDetailPage: FC = () => {
             {v.options.length > 0 && renderOptionCards({})}
             {v.execution && <ExecutionSummary execution={v.execution} />}
             {v.verification && <VerificationSummary verification={v.verification} />}
-            {needsApproval.Escalation && (
+            {needsApproval.Escalation ? (
               <StageApprovalBanner
                 canApprove={canApprove}
                 canApproveLoading={canApproveLoading}
@@ -261,9 +262,18 @@ const RunDetailPage: FC = () => {
                 onClearError={clearMutationError}
                 stageType="Escalation"
               />
+            ) : (
+              v.escalationSandbox && (
+                <StageInProgress
+                  sandbox={v.escalationSandbox}
+                  sinceTime={v.escalationStartedAt}
+                  title={t('Escalation')}
+                />
+              )
             )}
           </>
         );
+
       default:
         if (TERMINAL_PHASES.includes(v.phase)) {
           return (
@@ -271,6 +281,7 @@ const RunDetailPage: FC = () => {
               {v.options.length > 0 && renderOptionCards({})}
               {v.execution && <ExecutionSummary execution={v.execution} />}
               {v.verification && <VerificationSummary verification={v.verification} />}
+              {v.escalation && <EscalationSummary escalation={v.escalation} />}
             </>
           );
         }
@@ -385,7 +396,7 @@ const RunDetailPage: FC = () => {
           {view?.failureReason && <Alert isInline title={view.failureReason} variant="danger" />}
 
           {resultsError && (
-            <Alert isInline title={t('Unable to load analysis results.')} variant="warning" />
+            <Alert isInline title={t('Unable to load run results.')} variant="warning" />
           )}
         </PageSection>
 

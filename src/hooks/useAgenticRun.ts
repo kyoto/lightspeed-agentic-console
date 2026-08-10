@@ -16,6 +16,8 @@ import {
   AnalysisResultK8s,
   ApprovalStageType,
   derivePhaseFromConditions,
+  EscalationResultGVK,
+  EscalationResultK8s,
   ExecutionResultGVK,
   ExecutionResultK8s,
   LightspeedAgenticRunApprovalGVK,
@@ -30,6 +32,7 @@ import {
 import { buildApprovalPatch, stageNeedsApproval } from '../utils/approval';
 import {
   AgenticRunView,
+  EscalationView,
   ExecutionView,
   RemediationOptionView,
   RootCauseView,
@@ -136,6 +139,23 @@ export const mapVerification = (
   };
 };
 
+export const mapEscalation = (
+  escalationResult: EscalationResultK8s | undefined,
+  escalationSandbox?: { claimName?: string; namespace?: string },
+): EscalationView | undefined => {
+  if (!escalationResult) return undefined;
+
+  return {
+    summary: escalationResult.status?.summary,
+    content: escalationResult.status?.content,
+    failureReason: escalationResult.status?.failureReason,
+    escalationSandbox: mapSandbox(escalationSandbox),
+    escalationStartedAt: (escalationResult.status?.conditions ?? []).find(
+      (c) => c.type === 'Started',
+    )?.lastTransitionTime,
+  };
+};
+
 const condVariant = (reason?: string): TimelineEvent['variant'] => {
   if (reason === 'Succeeded' || reason === 'Complete') return 'success';
   if (reason === 'Failed') return 'danger';
@@ -151,6 +171,7 @@ export const mapTimeline = (
   execution?: ExecutionResultK8s,
   verification?: VerificationResultK8s,
   approval?: AgenticRunApprovalK8s,
+  escalation?: EscalationResultK8s,
 ): TimelineEvent[] => {
   const events: TimelineEvent[] = [];
 
@@ -180,6 +201,12 @@ export const mapTimeline = (
       label: t('Verification'),
       currentPhase: 'Verifying',
       failureReason: verification?.status?.failureReason,
+    },
+    {
+      conditions: escalation?.status?.conditions,
+      label: t('Escalation'),
+      currentPhase: 'Escalating',
+      failureReason: escalation?.status?.failureReason,
     },
   ];
 
@@ -288,6 +315,7 @@ const mapToAgenticRunView = (
   execution: ExecutionResultK8s | undefined,
   verification: VerificationResultK8s | undefined,
   approval: AgenticRunApprovalK8s | undefined,
+  escalation: EscalationResultK8s | undefined,
   t: TFunction,
 ): AgenticRunView | undefined => {
   if (!run?.metadata?.name) return undefined;
@@ -297,7 +325,8 @@ const mapToAgenticRunView = (
   const failureReason =
     analysis?.status?.failureReason ??
     execution?.status?.failureReason ??
-    verification?.status?.failureReason;
+    verification?.status?.failureReason ??
+    escalation?.status?.failureReason;
 
   return {
     phase,
@@ -318,12 +347,16 @@ const mapToAgenticRunView = (
       (c) => c.type === 'Started',
     )?.lastTransitionTime,
     verificationSandbox: mapSandbox(run.status?.steps?.verification?.sandbox),
+    escalationStartedAt: (escalation?.status?.conditions ?? []).find((c) => c.type === 'Started')
+      ?.lastTransitionTime,
+    escalationSandbox: mapSandbox(run.status?.steps?.escalation?.sandbox),
     executedOptionIndex: (approval?.spec?.stages ?? []).find((s) => s.type === 'Execution')
       ?.execution?.option,
     options: (options ?? []).map((opt, i) => mapOption(opt, i)),
     execution: mapExecution(options, execution, run.status?.steps?.execution?.sandbox),
     verification: mapVerification(verification, run.status?.steps?.verification?.sandbox),
-    timeline: mapTimeline(run, phase, t, analysis, execution, verification, approval),
+    escalation: mapEscalation(escalation, run.status?.steps?.escalation?.sandbox),
+    timeline: mapTimeline(run, phase, t, analysis, execution, verification, approval, escalation),
   };
 };
 
@@ -393,6 +426,19 @@ export const useAgenticRun = (
       : null,
   );
 
+  const [escalationResults, escalationLoaded, escalationError] = useK8sWatchResource<
+    EscalationResultK8s[]
+  >(
+    watchEnabled
+      ? {
+          groupVersionKind: EscalationResultGVK,
+          namespace,
+          isList: true,
+          selector: { matchLabels: { [RESULT_LABEL_RUN]: name } },
+        }
+      : null,
+  );
+
   const [approval, approvalLoaded, approvalError] = useK8sWatchResource<AgenticRunApprovalK8s>(
     watchEnabled
       ? {
@@ -406,6 +452,7 @@ export const useAgenticRun = (
   const analysisRefs = run?.status?.steps?.analysis?.results;
   const executionRefs = run?.status?.steps?.execution?.results;
   const verificationRefs = run?.status?.steps?.verification?.results;
+  const escalationRefs = run?.status?.steps?.escalation?.results;
 
   const analysis = useMemo(
     () => filterLatest(analysisResults, analysisRefs),
@@ -419,10 +466,14 @@ export const useAgenticRun = (
     () => filterLatest(verificationResults, verificationRefs),
     [verificationResults, verificationRefs],
   );
+  const escalation = useMemo(
+    () => filterLatest(escalationResults, escalationRefs),
+    [escalationResults, escalationRefs],
+  );
 
   const view = useMemo(
-    () => mapToAgenticRunView(run, analysis, execution, verification, approval, t),
-    [run, analysis, execution, verification, approval, t],
+    () => mapToAgenticRunView(run, analysis, execution, verification, approval, escalation, t),
+    [run, analysis, execution, verification, approval, escalation, t],
   );
 
   const conditions = run?.status?.conditions;
@@ -438,12 +489,14 @@ export const useAgenticRun = (
     [approval, conditions, phase],
   );
 
-  const resultsLoaded = analysisLoaded && executionLoaded && verificationLoaded && approvalLoaded;
+  const resultsLoaded =
+    analysisLoaded && executionLoaded && verificationLoaded && escalationLoaded && approvalLoaded;
   const approvalNotFound = approvalError instanceof HttpError && approvalError.code === 404;
   const resultsError =
     analysisError ??
     executionError ??
     verificationError ??
+    escalationError ??
     (approvalNotFound ? undefined : approvalError);
 
   const [canApprove, canApproveLoading] = useAccessReview({
