@@ -1,4 +1,4 @@
-import { AgentAction, AgenticRunPhase } from './agenticrun';
+import { AgentAction, AgenticRunPhase, AgentRbac } from './agenticrun';
 
 export type { AgenticRunPhase } from './agenticrun';
 
@@ -36,6 +36,7 @@ export interface RemediationOptionView {
   verificationSteps?: VerificationStepView[];
   cause: string;
   detail: string;
+  rbac?: AgentRbac;
 }
 
 export interface TimelineEvent {

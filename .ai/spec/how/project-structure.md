@@ -17,6 +17,7 @@
 | `src/components/runs/detail/VerificationSummary.tsx` | `VerificationSummary` | Verification checks and summary |
 | `src/components/runs/detail/RunPhaseLabel.tsx` | `RunPhaseLabel` | Phase label with status color |
 | `src/components/runs/detail/RunTimeline.tsx` | `RunTimeline` | Chronological event timeline |
+| `src/components/runs/detail/RequiredPermissions.tsx` | `RequiredPermissions` | RBAC permission summary and expandable detail table for remediation options |
 | `src/components/runs/detail/StageInProgress.tsx` | `StageInProgress` | In-progress stage card with embedded log viewer |
 | `src/components/runs/detail/SandboxLogViewer.tsx` | `SandboxLogViewer` | Expandable log viewer with streaming and search |
 | `src/components/AgenticLayout.tsx` | `AgenticLayout` | Watches `AgenticOLSConfig` CR; renders a system-suspended danger banner above page content when `spec.suspended` is true |

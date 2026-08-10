@@ -201,6 +201,7 @@ describe('mapOption', () => {
       rollbackCommand: 'kubectl rollout undo',
       cause: 'Memory limit too low',
       detail: 'Pod OOMKilled',
+      rbac: undefined,
     });
   });
 
@@ -211,6 +212,24 @@ describe('mapOption', () => {
     expect(result.description).toBe('Just a summary');
     expect(result.estimatedImpact).toBeUndefined();
     expect(result.actions).toBeUndefined();
+  });
+
+  test('passes through rbac when present', () => {
+    const rbac = {
+      namespaceScoped: [
+        {
+          namespace: 'openshift-monitoring',
+          apiGroups: [''],
+          resources: ['secrets'],
+          verbs: ['get', 'create', 'patch'],
+          justification: 'Rotate secret',
+        },
+      ],
+      clusterScoped: [],
+    };
+    const opt = makeOption({ rbac });
+    const result = mapOption(opt, 0);
+    expect(result.rbac).toEqual(rbac);
   });
 
   test('falls back to empty string when both remediationPlan and summary are absent', () => {

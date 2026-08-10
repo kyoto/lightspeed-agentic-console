@@ -71,6 +71,7 @@ export const mapOption = (opt: RemediationOption, index: number): RemediationOpt
     verificationSteps: opt.verification?.steps,
     cause: opt.diagnosis?.rootCause ?? '',
     detail: opt.diagnosis?.summary ?? '',
+    rbac: opt.rbac,
   };
 };
 
