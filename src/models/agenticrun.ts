@@ -374,8 +374,8 @@ export type PermissionRule = {
 };
 
 export type AgentRbac = {
-  namespaceScoped: PermissionRule[];
-  clusterScoped: PermissionRule[];
+  namespaceScoped?: PermissionRule[];
+  clusterScoped?: PermissionRule[];
 };
 
 export type RemediationOption = {

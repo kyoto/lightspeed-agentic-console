@@ -26,6 +26,7 @@ import { getReversibilityColor, getReversibilityText } from '../../../utils/agen
 import { ApprovalGatedButton } from '../../ApprovalGatedButton';
 import { CodeBlockWithClipboard } from '../../CodeBlockWithClipboard';
 import { MarkdownContent } from '../../MarkdownContent';
+import { RequiredPermissions } from './RequiredPermissions';
 import './detail.css';
 
 interface RemediationOptionCardProps {
@@ -166,6 +167,8 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                 </FlexItem>
               </>
             )}
+
+            {option.rbac && <RequiredPermissions rbac={option.rbac} />}
 
             <FlexItem>
               <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
