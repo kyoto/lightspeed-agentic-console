@@ -190,6 +190,7 @@ export type AnalysisApproval = {
 
 export type ExecutionApproval = {
   agent?: string;
+  maxAttempts?: number;
   option?: number;
 };
 

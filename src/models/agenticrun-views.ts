@@ -75,11 +75,19 @@ export interface VerificationView {
   verificationStartedAt?: string;
 }
 
+export interface ExecutionRecordView {
+  approvedAt?: string;
+  approverUsername?: string;
+  maxAttempts?: number;
+  selectedOption?: string;
+}
+
 export interface ExecutionView {
   originalRootCause: string;
   remediationDelta: string;
   outcome: string;
   actions: ExecutionActionView[];
+  executionRecord?: ExecutionRecordView;
   executionSandbox?: SandboxView;
   executionStartedAt?: string;
 }
