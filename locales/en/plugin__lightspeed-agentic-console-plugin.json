@@ -86,6 +86,7 @@
   "Failed to approve execution.": "Failed to approve execution.",
   "Failed to copy to clipboard": "Failed to copy to clipboard",
   "Failed to deny {{stage}}.": "Failed to deny {{stage}}.",
+  "Failed to load agentic capabilities configuration": "Failed to load agentic capabilities configuration",
   "Failed to load logs.": "Failed to load logs.",
   "Failed to update agentic capabilities": "Failed to update agentic capabilities",
   "Failure reason": "Failure reason",

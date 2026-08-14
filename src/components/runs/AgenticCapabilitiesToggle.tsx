@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  k8sCreate,
   k8sPatch,
   useAccessReview,
   useK8sWatchResource,
@@ -24,7 +25,12 @@ import {
   AgenticOLSConfigGVK,
   AgenticOLSConfigModel,
 } from '../../models/agenticrun';
-import { buildSuspendedPatch } from './agenticCapabilitiesUtils';
+import {
+  AGENTIC_OLS_CONFIG_NAME,
+  buildAgenticOLSConfig,
+  buildSuspendedPatch,
+  isNotFoundError,
+} from './agenticCapabilitiesUtils';
 
 import './AgenticCapabilitiesToggle.css';
 
@@ -34,9 +40,9 @@ const AgenticCapabilitiesToggle: React.FC = () => {
   const [error, setError] = React.useState('');
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
-  const [config, loaded] = useK8sWatchResource<AgenticOLSConfig>({
+  const [config, loaded, loadError] = useK8sWatchResource<AgenticOLSConfig>({
     groupVersionKind: AgenticOLSConfigGVK,
-    name: 'cluster',
+    name: AGENTIC_OLS_CONFIG_NAME,
   });
 
   const [canPatch] = useAccessReview({
@@ -45,6 +51,18 @@ const AgenticCapabilitiesToggle: React.FC = () => {
     verb: 'patch',
   });
 
+  const [canCreate] = useAccessReview({
+    group: AgenticOLSConfigModel.apiGroup,
+    resource: AgenticOLSConfigModel.plural,
+    verb: 'create',
+  });
+
+  const configExists = !!config?.metadata?.name;
+  const configAbsent = isNotFoundError(loadError);
+  const unknownLoadError = !!loadError && !configAbsent;
+  const ready = loaded || configAbsent;
+  const canModify = configExists ? canPatch : canCreate;
+
   const isEnabled = !config?.spec?.suspended;
 
   const setSuspended = React.useCallback(
@@ -52,11 +70,16 @@ const AgenticCapabilitiesToggle: React.FC = () => {
       setSaving(true);
       setError('');
       try {
-        await k8sPatch({
-          model: AgenticOLSConfigModel,
-          resource: config,
-          data: buildSuspendedPatch(suspended),
-        });
+        await (configExists
+          ? k8sPatch({
+              model: AgenticOLSConfigModel,
+              resource: config,
+              data: buildSuspendedPatch(suspended),
+            })
+          : k8sCreate({
+              model: AgenticOLSConfigModel,
+              data: buildAgenticOLSConfig(suspended),
+            }));
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -65,7 +88,7 @@ const AgenticCapabilitiesToggle: React.FC = () => {
         setSaving(false);
       }
     },
-    [config],
+    [config, configExists],
   );
 
   const handleToggle = React.useCallback(
@@ -88,6 +111,15 @@ const AgenticCapabilitiesToggle: React.FC = () => {
 
   return (
     <>
+      {unknownLoadError && (
+        <Alert
+          isInline
+          title={t('Failed to load agentic capabilities configuration')}
+          variant="danger"
+        >
+          {loadError instanceof Error ? loadError.message : String(loadError)}
+        </Alert>
+      )}
       {error && !confirmOpen && (
         <Alert
           actionClose={<AlertActionCloseButton onClose={() => setError('')} />}
@@ -135,7 +167,7 @@ const AgenticCapabilitiesToggle: React.FC = () => {
                 aria-label={t('Agentic capabilities')}
                 id="agentic-capabilities-toggle"
                 isChecked={isEnabled}
-                isDisabled={!loaded || saving || !canPatch}
+                isDisabled={!ready || saving || !canModify}
                 onChange={handleToggle}
               />
             </FlexItem>
