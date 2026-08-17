@@ -1,22 +1,12 @@
-.ols-plugin__config-page {
-  padding: var(--pf-t--global--spacer--lg);
+.ols-plugin__config-page-subtitle {
+  margin-top: var(--pf-t--global--spacer--md);
 }
 
-.ols-plugin__config-error-text {
-  color: var(--pf-t--global--color--status--danger--default);
+.ols-plugin__config-content {
+  max-width: 600px;
 }
 
-.ols-plugin__config-tab-content {
-  padding-top: var(--pf-t--global--spacer--lg);
-}
-
-.ols-plugin__config-tab-content--narrow {
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.ols-plugin__config-tab-description {
-  color: var(--pf-t--global--text--color--subtle);
+.ols-plugin__config-description {
   margin-bottom: var(--pf-t--global--spacer--lg);
 }
 
@@ -24,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--pf-t--global--spacer--sm) 0;
+  padding: var(--pf-t--global--spacer--md) 0;
   border-bottom: 1px solid var(--pf-t--global--border--color--default);
 }
 
@@ -37,29 +27,8 @@
   min-width: 120px;
 }
 
-.ols-plugin__config-form-section {
-  margin-top: var(--pf-t--global--spacer--lg);
-  padding: var(--pf-t--global--spacer--lg);
-  border: 1px solid var(--pf-t--global--border--color--default);
-  border-radius: var(--pf-t--global--border--radius--medium);
-  background: var(--pf-t--global--background--color--primary--default);
-}
-
 .ols-plugin__config-form-actions {
   display: flex;
   gap: var(--pf-t--global--spacer--sm);
   margin-top: var(--pf-t--global--spacer--lg);
-}
-
-.ols-plugin__config-table-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--pf-t--global--spacer--md);
-}
-
-.ols-plugin__config-max-attempts {
-  display: flex;
-  align-items: center;
-  gap: var(--pf-t--global--spacer--md);
-  padding-top: var(--pf-t--global--spacer--lg);
 }

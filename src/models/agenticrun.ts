@@ -20,40 +20,6 @@ export const LightspeedAgenticRunGVK = {
   version: LightspeedAgenticRunModel.apiVersion,
 };
 
-export const LightspeedAgentModel: K8sModel = {
-  apiGroup: 'agentic.openshift.io',
-  apiVersion: 'v1alpha1',
-  kind: 'Agent',
-  plural: 'agents',
-  abbr: 'LSA',
-  namespaced: false,
-  label: 'Agent',
-  labelPlural: 'Agents',
-};
-
-export const LightspeedAgentGVK = {
-  group: LightspeedAgentModel.apiGroup,
-  kind: LightspeedAgentModel.kind,
-  version: LightspeedAgentModel.apiVersion,
-};
-
-export const LightspeedLLMProviderModel: K8sModel = {
-  apiGroup: 'agentic.openshift.io',
-  apiVersion: 'v1alpha1',
-  kind: 'LLMProvider',
-  plural: 'llmproviders',
-  abbr: 'LLP',
-  namespaced: false,
-  label: 'LLM Provider',
-  labelPlural: 'LLM Providers',
-};
-
-export const LightspeedLLMProviderGVK = {
-  group: LightspeedLLMProviderModel.apiGroup,
-  kind: LightspeedLLMProviderModel.kind,
-  version: LightspeedLLMProviderModel.apiVersion,
-};
-
 export const LightspeedApprovalPolicyModel: K8sModel = {
   apiGroup: 'agentic.openshift.io',
   apiVersion: 'v1alpha1',
@@ -653,63 +619,6 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   return 'Pending';
 };
 
-export type LLMProviderType =
-  'Anthropic' | 'GoogleCloudVertex' | 'OpenAI' | 'AzureOpenAI' | 'AWSBedrock';
-
-export type SecretRef = {
-  name: string;
-};
-
-export type AnthropicConfig = {
-  credentialsSecret: SecretRef;
-  url?: string;
-};
-
-export type GoogleCloudVertexConfig = {
-  credentialsSecret: SecretRef;
-  projectID: string;
-  region: string;
-  url?: string;
-};
-
-export type OpenAIConfig = {
-  credentialsSecret: SecretRef;
-  url?: string;
-};
-
-export type AzureOpenAIConfig = {
-  credentialsSecret: SecretRef;
-  endpoint: string;
-  apiVersion?: string;
-  url?: string;
-};
-
-export type AWSBedrockConfig = {
-  credentialsSecret: SecretRef;
-  region: string;
-  url?: string;
-};
-
-export type LLMProviderSpec = {
-  type: LLMProviderType;
-  anthropic?: AnthropicConfig;
-  googleCloudVertex?: GoogleCloudVertexConfig;
-  openAI?: OpenAIConfig;
-  azureOpenAI?: AzureOpenAIConfig;
-  awsBedrock?: AWSBedrockConfig;
-};
-
-export type LLMProviderResource = {
-  apiVersion: string;
-  kind: string;
-  metadata: {
-    name: string;
-    creationTimestamp?: string;
-    uid?: string;
-  };
-  spec: LLMProviderSpec;
-};
-
 export type ApprovalMode = 'Automatic' | 'Manual';
 
 export type SandboxStepName = 'Analysis' | 'Execution' | 'Verification' | 'Escalation';
@@ -737,37 +646,7 @@ export type ApprovalPolicyResource = {
   spec: ApprovalPolicySpec;
 };
 
-export type AgentTimeouts = {
-  analysisSeconds?: number;
-  executionSeconds?: number;
-  verificationSeconds?: number;
-  chatSeconds?: number;
-};
-
-export type AgentSpec = {
-  llmProvider: { name: string };
-  model: string;
-  timeouts?: AgentTimeouts;
-  maxTurns?: number;
-};
-
-export type AgentResource = {
-  apiVersion: string;
-  kind: string;
-  metadata: {
-    name: string;
-    creationTimestamp?: string;
-    uid?: string;
-  };
-  spec: AgentSpec;
-  status?: {
-    conditions?: AgenticRunCondition[];
-  };
-};
-
-export type LLMProviderK8s = LLMProviderResource & K8sResourceCommon;
 export type ApprovalPolicyK8s = ApprovalPolicyResource & K8sResourceCommon;
-export type AgentK8s = AgentResource & K8sResourceCommon;
 export type AgenticRunK8s = LightspeedAgenticRun & K8sResourceCommon;
 export type AgenticRunApprovalK8s = LightspeedAgenticRunApproval & K8sResourceCommon;
 export type AnalysisResultK8s = AnalysisResultCR & K8sResourceCommon;
