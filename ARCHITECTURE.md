@@ -59,7 +59,6 @@ erDiagram
     Proposal ||--o{ VerificationResult : "label selector"
     Proposal ||--o{ EscalationResult : "label selector"
     ApprovalPolicy ||--|| Cluster : "singleton 'cluster'"
-    Agent }o--|| LLMProvider : "references by name"
 ```
 
 ## Plugin Architecture

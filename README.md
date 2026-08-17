@@ -6,7 +6,7 @@ The plugin adds a navigation section to the admin perspective with the following
 
 - **Proposal List** (`/lightspeed/proposals`) — Filterable table of all `Proposal` custom resources across namespaces
 - **Proposal Detail** (`/lightspeed/proposals/:ns/:name`) — Multi-tab workflow view with approval controls, live sandbox log streaming, and dynamic adapter components
-- **Configuration** (`/lightspeed/configuration`) — Cluster-wide settings for approval policies, LLM providers, and agent configurations
+- **Configuration** (`/lightspeed/configuration`) — Cluster-wide approval policy settings
 
 ## Custom Resources
 
@@ -20,8 +20,6 @@ The plugin consumes resources from the `agentic.openshift.io/v1alpha1` API group
 | `ExecutionResult` | Namespaced | Output of the execution agent |
 | `VerificationResult` | Namespaced | Output of the verification agent |
 | `EscalationResult` | Namespaced | Output of the escalation agent |
-| `Agent` | Cluster | Agent configuration (LLM provider, model, timeouts) |
-| `LLMProvider` | Cluster | LLM backend configuration |
 | `ApprovalPolicy` | Cluster | Auto vs. manual approval per workflow stage |
 
 ## Prerequisites

@@ -30,7 +30,7 @@ const getStageApproval = (
   return found?.approval ?? 'Manual';
 };
 
-const ApprovalPolicyTab: React.FC = () => {
+const ApprovalPolicy: React.FC = () => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
 
   const [policy, loaded, loadError] = useK8sWatchResource<ApprovalPolicyK8s>({
@@ -123,29 +123,45 @@ const ApprovalPolicyTab: React.FC = () => {
       )}
       {success && <Alert isInline title={success} variant="success" />}
 
-      {STAGES.map((stage) => (
-        <div className="ols-plugin__config-approval-row" key={stage}>
-          <span className="ols-plugin__config-approval-label">{t(stage)}</span>
-          <ToggleGroup>
-            <ToggleGroupItem
-              isSelected={stageValues[stage] === 'Manual'}
-              onChange={() => setStageValues((prev) => ({ ...prev, [stage]: 'Manual' }))}
-              text={t('Manual')}
-            />
-            <ToggleGroupItem
-              isSelected={stageValues[stage] === 'Automatic'}
-              onChange={() => {
-                if (stage === 'Execution' && stageValues[stage] === 'Manual') {
-                  setIsExecutionModalOpen(true);
-                  return;
-                }
-                setStageValues((prev) => ({ ...prev, [stage]: 'Automatic' }));
-              }}
-              text={t('Automatic')}
-            />
-          </ToggleGroup>
+      <div className="ols-plugin__config-approval-rows">
+        {STAGES.map((stage) => (
+          <div className="ols-plugin__config-approval-row" key={stage}>
+            <span className="ols-plugin__config-approval-label">{t(stage)}</span>
+            <ToggleGroup>
+              <ToggleGroupItem
+                isSelected={stageValues[stage] === 'Manual'}
+                onChange={() => setStageValues((prev) => ({ ...prev, [stage]: 'Manual' }))}
+                text={t('Manual')}
+              />
+              <ToggleGroupItem
+                isSelected={stageValues[stage] === 'Automatic'}
+                onChange={() => {
+                  if (stage === 'Execution' && stageValues[stage] === 'Manual') {
+                    setIsExecutionModalOpen(true);
+                    return;
+                  }
+                  setStageValues((prev) => ({ ...prev, [stage]: 'Automatic' }));
+                }}
+                text={t('Automatic')}
+              />
+            </ToggleGroup>
+          </div>
+        ))}
+        <div className="ols-plugin__config-approval-row">
+          <span className="ols-plugin__config-approval-label">{t('Max retry attempts')}</span>
+          <NumberInput
+            max={3}
+            min={1}
+            onChange={(e) => {
+              const val = Number((e.target as HTMLInputElement).value);
+              if (val >= 1 && val <= 3) setMaxAttempts(val);
+            }}
+            onMinus={() => setMaxAttempts((v) => Math.max(1, v - 1))}
+            onPlus={() => setMaxAttempts((v) => Math.min(3, v + 1))}
+            value={maxAttempts}
+          />
         </div>
-      ))}
+      </div>
       <ExecutionPolicyModal
         isOpen={isExecutionModalOpen}
         onClose={() => {
@@ -159,21 +175,6 @@ const ApprovalPolicyTab: React.FC = () => {
         }}
       />
 
-      <div className="ols-plugin__config-max-attempts">
-        <span className="ols-plugin__config-approval-label">{t('Max retry attempts')}</span>
-        <NumberInput
-          max={3}
-          min={1}
-          onChange={(e) => {
-            const val = Number((e.target as HTMLInputElement).value);
-            if (val >= 1 && val <= 3) setMaxAttempts(val);
-          }}
-          onMinus={() => setMaxAttempts((v) => Math.max(1, v - 1))}
-          onPlus={() => setMaxAttempts((v) => Math.min(3, v + 1))}
-          value={maxAttempts}
-        />
-      </div>
-
       <div className="ols-plugin__config-form-actions">
         <Button isDisabled={saving} isLoading={saving} onClick={handleSave} variant="primary">
           {t('Save')}
@@ -183,4 +184,4 @@ const ApprovalPolicyTab: React.FC = () => {
   );
 };
 
-export default ApprovalPolicyTab;
+export default ApprovalPolicy;

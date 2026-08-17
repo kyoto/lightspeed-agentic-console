@@ -31,12 +31,8 @@
 | `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapEscalation`, `mapTimeline`, `filterLatest` | Fetches run + result CRs (including EscalationResult), maps API types → view types |
 | `src/hooks/useExecutionLogActions.ts` | `useExecutionLogActions` | Parses execution actions from sandbox pod logs |
 | `src/hooks/useSandboxLogStream.ts` | `useSandboxLogStream` | Streams audit lines from sandbox pod logs |
-| `src/components/configuration/ConfigurationPage.tsx` | `ConfigurationPage` | Configuration page with tabbed layout |
-| `src/components/configuration/ApprovalPolicyTab.tsx` | `ApprovalPolicyTab` | Approval policy CRUD |
-| `src/components/configuration/LLMProvidersTab.tsx` | `LLMProvidersTab` | LLM provider list and creation |
-| `src/components/configuration/AgentsTab.tsx` | `AgentsTab` | Agent tier list and creation |
-| `src/components/configuration/LLMProviderForm.tsx` | `LLMProviderForm` | Type-specific provider creation form |
-| `src/components/configuration/AgentForm.tsx` | `AgentForm` | Agent creation form with provider selection |
+| `src/components/configuration/ConfigurationPage.tsx` | `ConfigurationPage` | Configuration page rendering the approval policy view |
+| `src/components/configuration/ApprovalPolicy.tsx` | `ApprovalPolicy` | Approval policy CRUD |
 | `console-extensions.json` | — | Plugin extension declarations (routes, nav items) |
 | `webpack.config.ts` | — | Module federation and build configuration |
 | `playwright.config.ts` | — | Playwright e2e test configuration |
