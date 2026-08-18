@@ -1,14 +1,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { k8sCreate, k8sPatch, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
-import {
-  Alert,
-  Button,
-  NumberInput,
-  Spinner,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@patternfly/react-core';
+import { Alert, Button, Spinner, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import {
   ApprovalMode,
@@ -46,7 +39,6 @@ const ApprovalPolicy: React.FC = () => {
     Verification: 'Manual',
     Escalation: 'Manual',
   });
-  const [maxAttempts, setMaxAttempts] = React.useState(1);
   const [isExecutionModalOpen, setIsExecutionModalOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -63,7 +55,6 @@ const ApprovalPolicy: React.FC = () => {
         Verification: getStageApproval(stages, 'Verification'),
         Escalation: getStageApproval(stages, 'Escalation'),
       });
-      setMaxAttempts(policy.spec?.maxAttempts ?? 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [policyResourceVersion]);
@@ -75,7 +66,6 @@ const ApprovalPolicy: React.FC = () => {
 
     const spec = {
       stages: STAGES.map((name) => ({ name, approval: stageValues[name] })),
-      maxAttempts,
     };
 
     try {
@@ -83,10 +73,7 @@ const ApprovalPolicy: React.FC = () => {
         await k8sPatch({
           model: LightspeedApprovalPolicyModel,
           resource: policy,
-          data: [
-            { op: 'replace', path: '/spec/stages', value: spec.stages },
-            { op: 'replace', path: '/spec/maxAttempts', value: spec.maxAttempts },
-          ],
+          data: [{ op: 'replace', path: '/spec/stages', value: spec.stages }],
         });
       } else {
         await k8sCreate({
@@ -147,20 +134,6 @@ const ApprovalPolicy: React.FC = () => {
             </ToggleGroup>
           </div>
         ))}
-        <div className="ols-plugin__config-approval-row">
-          <span className="ols-plugin__config-approval-label">{t('Max retry attempts')}</span>
-          <NumberInput
-            max={3}
-            min={1}
-            onChange={(e) => {
-              const val = Number((e.target as HTMLInputElement).value);
-              if (val >= 1 && val <= 3) setMaxAttempts(val);
-            }}
-            onMinus={() => setMaxAttempts((v) => Math.max(1, v - 1))}
-            onPlus={() => setMaxAttempts((v) => Math.min(3, v + 1))}
-            value={maxAttempts}
-          />
-        </div>
       </div>
       <ExecutionPolicyModal
         isOpen={isExecutionModalOpen}

@@ -368,13 +368,9 @@ describe('buildExecutionRecord', () => {
 
   test('leaves selectedOption undefined when option index is not set', () => {
     const options = [makeOption({ title: 'Scale up' })];
-    const result = buildExecutionRecord(
-      makeExecStage({ maxAttempts: 3 }),
-      options,
-      undefined,
-      undefined,
-    );
-    expect(result).toEqual({ maxAttempts: 3 });
+    const result = buildExecutionRecord(makeExecStage(), options, approver, undefined);
+    expect(result?.selectedOption).toBeUndefined();
+    expect(result?.approverUsername).toBe('alice');
   });
 
   test('prefers approver approvedAt over executionStartedAt', () => {
@@ -400,7 +396,7 @@ describe('buildExecutionRecord', () => {
   test('maps all fields together', () => {
     const options = [makeOption({ title: 'Restart pod' })];
     const result = buildExecutionRecord(
-      makeExecStage({ maxAttempts: 2, option: 0 }),
+      makeExecStage({ option: 0 }),
       options,
       approver,
       '2026-01-01T10:00:00Z',
@@ -408,7 +404,6 @@ describe('buildExecutionRecord', () => {
     expect(result).toEqual({
       approvedAt: '2026-01-01T09:00:00Z',
       approverUsername: 'alice',
-      maxAttempts: 2,
       selectedOption: 'Restart pod',
     });
   });

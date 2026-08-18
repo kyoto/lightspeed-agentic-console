@@ -156,7 +156,6 @@ export type AnalysisApproval = {
 
 export type ExecutionApproval = {
   agent?: string;
-  maxAttempts?: number;
   option?: number;
 };
 
@@ -630,7 +629,6 @@ export type ApprovalPolicyStage = {
 
 export type ApprovalPolicySpec = {
   stages?: ApprovalPolicyStage[];
-  maxAttempts?: number;
   maxConcurrentAgenticRuns?: number;
 };
 
