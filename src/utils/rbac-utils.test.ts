@@ -2,7 +2,11 @@ import { describe, expect, test } from 'vitest';
 import { PermissionRule } from '../models/agenticrun';
 import {
   buildPluralToKindMap,
-  groupByNamespace,
+  countClusterRules,
+  countNamespaceRules,
+  flattenRbacRules,
+  formatResource,
+  isClusterScoped,
   resolveKind,
   summarizeWritePermissions,
 } from './rbac-utils';
@@ -15,41 +19,101 @@ const makeRule = (overrides?: Partial<PermissionRule>): PermissionRule => ({
   ...overrides,
 });
 
-describe('groupByNamespace', () => {
-  test('groups rules by namespace', () => {
-    const rules = [
-      makeRule({ namespace: 'ns-a' }),
-      makeRule({ namespace: 'ns-b', resources: ['secrets'] }),
-      makeRule({ namespace: 'ns-a', resources: ['configmaps'] }),
-    ];
-    const groups = groupByNamespace(rules);
-    expect(groups).toHaveLength(2);
-    expect(groups[0].namespace).toBe('ns-a');
-    expect(groups[0].rules).toHaveLength(2);
-    expect(groups[1].namespace).toBe('ns-b');
-    expect(groups[1].rules).toHaveLength(1);
+describe('flattenRbacRules', () => {
+  test('concatenates namespace-scoped rules before cluster-scoped rules', () => {
+    const rules = flattenRbacRules({
+      namespaceScoped: [makeRule({ namespace: 'ns-a' }), makeRule({ namespace: 'ns-b' })],
+      clusterScoped: [makeRule({ resources: ['nodes'] })],
+    });
+    expect(rules).toHaveLength(3);
+    expect(rules[0].namespace).toBe('ns-a');
+    expect(rules[0].scope).toBe('namespace');
+    expect(rules[1].namespace).toBe('ns-b');
+    expect(rules[2].scope).toBe('cluster');
+    expect(rules[2].resources).toEqual(['nodes']);
+  });
+
+  test('preserves namespace-scoped rule order', () => {
+    const rules = flattenRbacRules({
+      namespaceScoped: [makeRule({ namespace: 'z-ns' }), makeRule({ namespace: 'a-ns' })],
+    });
+    expect(rules.map((r) => r.namespace)).toEqual(['z-ns', 'a-ns']);
   });
 
   test('coalesces undefined namespace to empty string', () => {
-    const groups = groupByNamespace([makeRule(), makeRule({ resources: ['secrets'] })]);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].namespace).toBe('');
-    expect(groups[0].rules).toHaveLength(2);
+    const rules = flattenRbacRules({ namespaceScoped: [makeRule()] });
+    expect(rules[0].namespace).toBe('');
   });
 
-  test('returns empty array for empty input', () => {
-    expect(groupByNamespace([])).toEqual([]);
+  test('handles missing groups', () => {
+    expect(flattenRbacRules({})).toEqual([]);
   });
 
-  test('preserves insertion order', () => {
-    const rules = [
-      makeRule({ namespace: 'z-ns' }),
-      makeRule({ namespace: 'a-ns' }),
-      makeRule({ namespace: 'z-ns', resources: ['secrets'] }),
-    ];
-    const groups = groupByNamespace(rules);
-    expect(groups[0].namespace).toBe('z-ns');
-    expect(groups[1].namespace).toBe('a-ns');
+  test('keeps a namespace named "cluster-wide" namespace-scoped', () => {
+    const rules = flattenRbacRules({
+      namespaceScoped: [makeRule({ namespace: 'cluster-wide' })],
+    });
+    expect(rules[0].scope).toBe('namespace');
+    expect(isClusterScoped(rules[0])).toBe(false);
+  });
+});
+
+describe('rule scope counts', () => {
+  const rules = flattenRbacRules({
+    clusterScoped: [makeRule({ resources: ['nodes'] })],
+    namespaceScoped: [makeRule({ namespace: 'ns-a' }), makeRule({ namespace: 'ns-b' })],
+  });
+
+  test('counts namespace-scoped rules', () => {
+    expect(countNamespaceRules(rules)).toBe(2);
+  });
+
+  test('counts cluster-scoped rules', () => {
+    expect(countClusterRules(rules)).toBe(1);
+  });
+});
+
+describe('isClusterScoped', () => {
+  test('is true for cluster-scoped rules', () => {
+    expect(isClusterScoped({ ...makeRule(), scope: 'cluster' })).toBe(true);
+  });
+
+  test('is false for namespace-scoped rules', () => {
+    expect(isClusterScoped({ ...makeRule({ namespace: 'ns-a' }), scope: 'namespace' })).toBe(false);
+  });
+});
+
+describe('formatResource', () => {
+  test('renders resources alone for the core api group', () => {
+    expect(formatResource(makeRule({ resources: ['pods'] }))).toBe('pods');
+  });
+
+  test('appends non-empty api groups in parentheses', () => {
+    expect(formatResource(makeRule({ apiGroups: ['apps'], resources: ['deployments'] }))).toBe(
+      'deployments (apps)',
+    );
+  });
+
+  test('joins multiple resources and api groups', () => {
+    expect(
+      formatResource(
+        makeRule({ apiGroups: ['apps', 'batch'], resources: ['deployments', 'jobs'] }),
+      ),
+    ).toBe('deployments, jobs (apps, batch)');
+  });
+
+  test('includes resource names in brackets before api groups', () => {
+    expect(
+      formatResource(
+        makeRule({ apiGroups: ['apps'], resources: ['deployments'], resourceNames: ['grafana'] }),
+      ),
+    ).toBe('deployments [grafana] (apps)');
+  });
+
+  test('omits the empty core api group', () => {
+    expect(formatResource(makeRule({ apiGroups: ['', 'apps'], resources: ['pods'] }))).toBe(
+      'pods (apps)',
+    );
   });
 });
 

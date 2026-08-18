@@ -1,5 +1,9 @@
 import { K8sModel } from '@openshift-console/dynamic-plugin-sdk';
-import { PermissionRule } from '../models/agenticrun';
+import { AgentRbac, PermissionRule } from '../models/agenticrun';
+
+export type ScopedPermissionRule = PermissionRule & {
+  scope: 'cluster' | 'namespace';
+};
 
 export const buildPluralToKindMap = (models: { [key: string]: K8sModel }): Map<string, string> => {
   const map = new Map<string, string>();
@@ -48,20 +52,22 @@ export const summarizeWritePermissions = (rules: PermissionRule[]): string =>
     })
     .join(' · ');
 
-export interface NamespaceGroup {
-  namespace: string;
-  rules: PermissionRule[];
-}
+// Flattens the grouped wire contract into a single ordered rule list, tagging each
+// rule with an explicit scope so cluster-scoped rules never collide with a real
+// namespace name.
+export const flattenRbacRules = (rbac: AgentRbac): ScopedPermissionRule[] => [
+  ...(rbac.namespaceScoped ?? []).map((rule) => ({
+    ...rule,
+    namespace: rule.namespace ?? '',
+    scope: 'namespace' as const,
+  })),
+  ...(rbac.clusterScoped ?? []).map((rule) => ({ ...rule, scope: 'cluster' as const })),
+];
 
-export const groupByNamespace = (rules: PermissionRule[]): NamespaceGroup[] => {
-  const map = new Map<string, PermissionRule[]>();
-  for (const rule of rules) {
-    const ns = rule.namespace ?? '';
-    if (!map.has(ns)) map.set(ns, []);
-    map.get(ns)!.push(rule);
-  }
-  return Array.from(map.entries()).map(([namespace, nsRules]) => ({
-    namespace,
-    rules: nsRules,
-  }));
-};
+export const isClusterScoped = (rule: ScopedPermissionRule): boolean => rule.scope === 'cluster';
+
+export const countNamespaceRules = (rules: ScopedPermissionRule[]): number =>
+  rules.filter((rule) => rule.scope === 'namespace').length;
+
+export const countClusterRules = (rules: ScopedPermissionRule[]): number =>
+  rules.filter(isClusterScoped).length;
