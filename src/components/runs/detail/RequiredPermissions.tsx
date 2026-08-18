@@ -1,6 +1,5 @@
 import {
   Alert,
-  Banner,
   Content,
   ContentVariants,
   ExpandableSection,
@@ -10,90 +9,51 @@ import {
   Title,
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { ResourceIcon, useK8sModels } from '@openshift-console/dynamic-plugin-sdk';
+import { ResourceIcon, ResourceLink, useK8sModels } from '@openshift-console/dynamic-plugin-sdk';
 import { type FC, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentRbac, PermissionRule } from '../../../models/agenticrun';
 import {
   buildPluralToKindMap,
+  countClusterRules,
+  countNamespaceRules,
+  flattenRbacRules,
   formatResource,
-  groupByNamespace,
   hasWriteVerb,
+  isClusterScoped,
   resolveKind,
   summarizeWritePermissions,
 } from '../../../utils/rbac-utils';
 import './detail.css';
 
-interface PermissionTableProps {
-  label: string;
-  rules: PermissionRule[];
+interface NamespaceCellProps {
+  namespace: string;
+}
+
+const NamespaceCell: FC<NamespaceCellProps> = ({ namespace }) => {
+  if (namespace === '') return <>{'—'}</>;
+  return (
+    <ResourceLink className="ols-plugin__rbac-namespace-link" kind="Namespace" name={namespace} />
+  );
+};
+
+interface ResourceCellProps {
+  rule: PermissionRule;
   pluralToKind: Map<string, string>;
 }
 
-const PermissionTable: FC<PermissionTableProps> = ({ label, rules, pluralToKind }) => {
-  const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+const ResourceCell: FC<ResourceCellProps> = ({ rule, pluralToKind }) => {
+  const kinds = rule.resources.map((r) => resolveKind(pluralToKind, rule.apiGroups, r));
+  if (!rule.resourceNames?.length) return <code>{formatResource(rule)}</code>;
   return (
-    <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+    <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsXs' }}>
+      {kinds.map((kind, j) => (
+        <FlexItem key={rule.resources[j]}>
+          <ResourceIcon kind={kind ?? rule.resources[j]} />
+        </FlexItem>
+      ))}
       <FlexItem>
-        <Banner className="ols-plugin__remediation-card-header--title">
-          <strong>{label}</strong>
-        </Banner>
-      </FlexItem>
-      <FlexItem>
-        <Table variant="compact">
-          <Thead>
-            <Tr>
-              <Th>{t('Resource')}</Th>
-              <Th>{t('Verbs')}</Th>
-              <Th>{t('Purpose')}</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {rules.map((rule, i) => {
-              const kinds = rule.resources.map((r) => resolveKind(pluralToKind, rule.apiGroups, r));
-              const allResolved = kinds.every(Boolean);
-              return (
-                <Tr key={i}>
-                  <Td dataLabel={t('Resource')}>
-                    {allResolved ? (
-                      <Flex
-                        alignItems={{ default: 'alignItemsCenter' }}
-                        spaceItems={{ default: 'spaceItemsXs' }}
-                      >
-                        {kinds.map((kind, j) => (
-                          <FlexItem key={rule.resources[j]}>
-                            <ResourceIcon kind={kind ?? rule.resources[j]} />
-                          </FlexItem>
-                        ))}
-                        <FlexItem>
-                          <code>{rule.resources.join(', ')}</code>
-                        </FlexItem>
-                        {!!rule.resourceNames?.length && (
-                          <FlexItem>
-                            <code>{(rule.resourceNames ?? []).join(', ')}</code>
-                          </FlexItem>
-                        )}
-                      </Flex>
-                    ) : (
-                      <code>{formatResource(rule)}</code>
-                    )}
-                  </Td>
-                  <Td dataLabel={t('Verbs')}>
-                    <code>{rule.verbs.join(', ')}</code>
-                  </Td>
-                  <Td dataLabel={t('Purpose')}>
-                    {rule.justification}{' '}
-                    {hasWriteVerb(rule) && (
-                      <Label color="orange" isCompact>
-                        {t('write')}
-                      </Label>
-                    )}
-                  </Td>
-                </Tr>
-              );
-            })}
-          </Tbody>
-        </Table>
+        <code>{rule.resourceNames.join(', ')}</code>
       </FlexItem>
     </Flex>
   );
@@ -109,17 +69,12 @@ export const RequiredPermissions: FC<RequiredPermissionsProps> = ({ rbac }) => {
   const [models] = useK8sModels();
 
   const pluralToKind = useMemo(() => buildPluralToKindMap(models), [models]);
-  const allNamespaceRules = useMemo(() => rbac.namespaceScoped ?? [], [rbac.namespaceScoped]);
-  const allClusterRules = useMemo(() => rbac.clusterScoped ?? [], [rbac.clusterScoped]);
-  const totalRules = allNamespaceRules.length + allClusterRules.length;
+  const rules = useMemo(() => flattenRbacRules(rbac), [rbac]);
+  const namespaceCount = countNamespaceRules(rules);
+  const clusterCount = countClusterRules(rules);
+  const writeSummary = useMemo(() => summarizeWritePermissions(rules), [rules]);
 
-  const namespaceGroups = useMemo(() => groupByNamespace(allNamespaceRules), [allNamespaceRules]);
-  const writeSummary = useMemo(
-    () => summarizeWritePermissions([...allNamespaceRules, ...allClusterRules]),
-    [allNamespaceRules, allClusterRules],
-  );
-
-  if (totalRules === 0) return null;
+  if (rules.length === 0) return null;
 
   return (
     <FlexItem>
@@ -144,17 +99,17 @@ export const RequiredPermissions: FC<RequiredPermissionsProps> = ({ rbac }) => {
             alignItems={{ default: 'alignItemsCenter' }}
             spaceItems={{ default: 'spaceItemsSm' }}
           >
-            {allNamespaceRules.length > 0 && (
+            {namespaceCount > 0 && (
               <FlexItem>
                 <Label color="blue" isCompact>
-                  {t('{{count}} namespace permission', { count: allNamespaceRules.length })}
+                  {t('{{count}} namespace permission', { count: namespaceCount })}
                 </Label>
               </FlexItem>
             )}
-            {allClusterRules.length > 0 && (
+            {clusterCount > 0 && (
               <FlexItem>
                 <Label color="purple" isCompact>
-                  {t('{{count}} cluster-wide permission', { count: allClusterRules.length })}
+                  {t('{{count}} cluster-wide permission', { count: clusterCount })}
                 </Label>
               </FlexItem>
             )}
@@ -173,30 +128,45 @@ export const RequiredPermissions: FC<RequiredPermissionsProps> = ({ rbac }) => {
             onToggle={(_e, expanded) => setIsExpanded(expanded)}
             toggleText={isExpanded ? t('Hide permission details') : t('View permission details')}
           >
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-              {namespaceGroups.map((group) => (
-                <FlexItem key={group.namespace}>
-                  <PermissionTable
-                    label={
-                      group.namespace
-                        ? `${t('Namespace')}: ${group.namespace}`
-                        : t('Namespace-scoped (unspecified)')
-                    }
-                    pluralToKind={pluralToKind}
-                    rules={group.rules}
-                  />
-                </FlexItem>
-              ))}
-              {allClusterRules.length > 0 && (
-                <FlexItem>
-                  <PermissionTable
-                    label={t('Cluster-wide')}
-                    pluralToKind={pluralToKind}
-                    rules={allClusterRules}
-                  />
-                </FlexItem>
-              )}
-            </Flex>
+            <Table variant="compact">
+              <Thead>
+                <Tr>
+                  <Th>{t('Namespace')}</Th>
+                  <Th>{t('Resource')}</Th>
+                  <Th>{t('Verbs')}</Th>
+                  <Th>{t('Purpose')}</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {rules.map((rule, i) => (
+                  <Tr key={i}>
+                    <Td dataLabel={t('Namespace')}>
+                      {isClusterScoped(rule) ? (
+                        <Label color="purple" isCompact>
+                          {t('Cluster-wide')}
+                        </Label>
+                      ) : (
+                        <NamespaceCell namespace={rule.namespace ?? ''} />
+                      )}
+                    </Td>
+                    <Td dataLabel={t('Resource')}>
+                      <ResourceCell pluralToKind={pluralToKind} rule={rule} />
+                    </Td>
+                    <Td dataLabel={t('Verbs')}>
+                      <code>{rule.verbs.join(', ')}</code>
+                    </Td>
+                    <Td dataLabel={t('Purpose')}>
+                      {rule.justification}{' '}
+                      {hasWriteVerb(rule) && (
+                        <Label color="orange" isCompact>
+                          {t('write')}
+                        </Label>
+                      )}
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
           </ExpandableSection>
         </FlexItem>
       </Flex>
