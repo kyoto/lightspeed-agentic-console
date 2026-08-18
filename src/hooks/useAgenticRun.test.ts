@@ -98,12 +98,7 @@ describe('derivePhase', () => {
     expect(derivePhaseFromConditions(conditions)).toBe('Verifying');
   });
 
-  test('returns Executing when Verified=False and reason=RetryingExecution', () => {
-    const conditions = [makeCondition('Verified', 'False', 'RetryingExecution')];
-    expect(derivePhaseFromConditions(conditions)).toBe('Executing');
-  });
-
-  test('returns Failed when Verified=False without retry reason', () => {
+  test('returns Failed when Verified=False', () => {
     const conditions = [makeCondition('Verified', 'False')];
     expect(derivePhaseFromConditions(conditions)).toBe('Failed');
   });

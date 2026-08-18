@@ -77,24 +77,15 @@ describe('derivePhaseFromConditions', () => {
     ).toBe('Completed');
   });
 
-  it('returns Executing for Verified=False with RetryingExecution reason', () => {
+  it('returns Escalating for Verified=False with Escalated=Unknown (verification failure escalates)', () => {
     expect(
       derivePhaseFromConditions([
         cond('Analyzed', 'True'),
         cond('Executed', 'True'),
-        cond('Verified', 'False', 'RetryingExecution'),
+        cond('Verified', 'False', 'VerificationFailed'),
+        cond('Escalated', 'Unknown', 'VerificationFailed'),
       ]),
-    ).toBe('Executing');
-  });
-
-  it('returns Failed for Verified=False with RetriesExhausted without Escalated condition', () => {
-    expect(
-      derivePhaseFromConditions([
-        cond('Analyzed', 'True'),
-        cond('Executed', 'True'),
-        cond('Verified', 'False', 'RetriesExhausted'),
-      ]),
-    ).toBe('Failed');
+    ).toBe('Escalating');
   });
 
   it('returns Failed for Verified=False with other reason', () => {

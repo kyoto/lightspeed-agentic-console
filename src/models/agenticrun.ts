@@ -379,7 +379,6 @@ export type ExecutionVerification = {
 
 export type ExecutionStepStatus = {
   phase?: StepPhase;
-  retryCount?: number;
   sandbox?: SandboxInfo;
   conditions?: AgenticRunCondition[];
   results?: StepResultRef[];
@@ -484,7 +483,6 @@ export type ExecutionResultCR = {
   metadata: { name: string; namespace: string; creationTimestamp?: string };
   spec: {
     agenticRunName: string;
-    retryIndex?: number;
   };
   status?: {
     conditions?: ResultCondition[];
@@ -501,7 +499,6 @@ export type VerificationResultCR = {
   metadata: { name: string; namespace: string; creationTimestamp?: string };
   spec: {
     agenticRunName: string;
-    retryIndex?: number;
   };
   status?: {
     conditions?: ResultCondition[];
@@ -590,12 +587,10 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   if (verified) {
     if (verified.status === 'True') return 'Completed';
     if (verified.status === 'Unknown') return 'Verifying';
-    switch (verified.reason) {
-      case 'RetryingExecution':
-        return 'Executing';
-      default:
-        return 'Failed';
-    }
+    // Verified=False maps to Failed. When the operator escalates on
+    // verification failure it sets the Escalated condition, which is checked
+    // above and takes precedence over this branch.
+    return 'Failed';
   }
 
   const executed = get('Executed');
