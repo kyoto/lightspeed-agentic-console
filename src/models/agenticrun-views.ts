@@ -78,7 +78,6 @@ export interface VerificationView {
 export interface ExecutionRecordView {
   approvedAt?: string;
   approverUsername?: string;
-  maxAttempts?: number;
   selectedOption?: string;
 }
 

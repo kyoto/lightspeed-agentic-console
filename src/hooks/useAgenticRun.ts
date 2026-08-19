@@ -327,16 +327,13 @@ export const buildExecutionRecord = (
   const record: ExecutionRecordView = {
     approvedAt: approver?.approvedAt ?? executionStartedAt,
     approverUsername: approver?.username,
-    maxAttempts: execStage.execution?.maxAttempts,
     selectedOption,
   };
 
   // approvedAt only renders nested inside the approverUsername row, so it can't
   // stand on its own — guard on the fields that render independently.
   const hasRenderableField =
-    record.approverUsername !== undefined ||
-    record.maxAttempts !== undefined ||
-    record.selectedOption !== undefined;
+    record.approverUsername !== undefined || record.selectedOption !== undefined;
 
   return hasRenderableField ? record : undefined;
 };
@@ -606,7 +603,6 @@ export const useAgenticRun = (
       runApprovalMutation(
         buildApprovalPatch(approval, 'Execution', false, {
           option: selectedOption,
-          maxAttempts: 1,
         }),
         t('Failed to approve execution.'),
       ),

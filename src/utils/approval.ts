@@ -55,7 +55,7 @@ export const buildApprovalPatch = (
   approval: LightspeedAgenticRunApproval | undefined,
   stageType: ApprovalStageType,
   denied: boolean,
-  options?: { maxAttempts?: number; option?: number; agent?: string },
+  options?: { option?: number; agent?: string },
 ): PatchOp[] => {
   const stage: ApprovalStage = { type: stageType };
   if (denied) stage.decision = 'Denied';
@@ -68,8 +68,6 @@ export const buildApprovalPatch = (
       stage.execution = {
         ...(options?.option !== undefined && { option: options.option }),
         ...(options?.agent && { agent: options.agent }),
-        ...(options?.maxAttempts !== undefined &&
-          options.maxAttempts > 0 && { maxAttempts: options.maxAttempts }),
       };
       break;
     case 'Verification':

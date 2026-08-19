@@ -83,14 +83,6 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 )}
-                {execution.executionRecord.maxAttempts !== undefined && (
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>{t('Max attempts')}</DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {execution.executionRecord.maxAttempts}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                )}
                 {execution.executionRecord.approverUsername && (
                   <DescriptionListGroup>
                     <DescriptionListTerm>{t('Approved by')}</DescriptionListTerm>
