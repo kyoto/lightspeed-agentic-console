@@ -112,7 +112,11 @@ const ApprovalPolicy: React.FC = () => {
 
       <div className="ols-plugin__config-approval-rows">
         {STAGES.map((stage) => (
-          <div className="ols-plugin__config-approval-row" key={stage}>
+          <div
+            className="ols-plugin__config-approval-row"
+            data-test={`config-approval-row-${stage}`}
+            key={stage}
+          >
             <span className="ols-plugin__config-approval-label">{t(stage)}</span>
             <ToggleGroup>
               <ToggleGroupItem
