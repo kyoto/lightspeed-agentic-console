@@ -432,13 +432,16 @@ export const useAgenticRun = (
     watchEnabled ? { groupVersionKind: LightspeedAgenticRunGVK, name, namespace } : null,
   );
 
+  const runUid = run?.metadata?.uid;
+  const resultsWatchEnabled = watchEnabled && !!runUid;
+
   const [analysisResults, analysisLoaded, analysisError] = useK8sWatchResource<AnalysisResultK8s[]>(
-    watchEnabled
+    resultsWatchEnabled
       ? {
           groupVersionKind: AnalysisResultGVK,
           namespace,
           isList: true,
-          selector: { matchLabels: { [RESULT_LABEL_RUN]: name } },
+          selector: { matchLabels: { [RESULT_LABEL_RUN]: runUid } },
         }
       : null,
   );
@@ -446,12 +449,12 @@ export const useAgenticRun = (
   const [executionResults, executionLoaded, executionError] = useK8sWatchResource<
     ExecutionResultK8s[]
   >(
-    watchEnabled
+    resultsWatchEnabled
       ? {
           groupVersionKind: ExecutionResultGVK,
           namespace,
           isList: true,
-          selector: { matchLabels: { [RESULT_LABEL_RUN]: name } },
+          selector: { matchLabels: { [RESULT_LABEL_RUN]: runUid } },
         }
       : null,
   );
@@ -459,12 +462,12 @@ export const useAgenticRun = (
   const [verificationResults, verificationLoaded, verificationError] = useK8sWatchResource<
     VerificationResultK8s[]
   >(
-    watchEnabled
+    resultsWatchEnabled
       ? {
           groupVersionKind: VerificationResultGVK,
           namespace,
           isList: true,
-          selector: { matchLabels: { [RESULT_LABEL_RUN]: name } },
+          selector: { matchLabels: { [RESULT_LABEL_RUN]: runUid } },
         }
       : null,
   );
@@ -472,12 +475,12 @@ export const useAgenticRun = (
   const [escalationResults, escalationLoaded, escalationError] = useK8sWatchResource<
     EscalationResultK8s[]
   >(
-    watchEnabled
+    resultsWatchEnabled
       ? {
           groupVersionKind: EscalationResultGVK,
           namespace,
           isList: true,
-          selector: { matchLabels: { [RESULT_LABEL_RUN]: name } },
+          selector: { matchLabels: { [RESULT_LABEL_RUN]: runUid } },
         }
       : null,
   );

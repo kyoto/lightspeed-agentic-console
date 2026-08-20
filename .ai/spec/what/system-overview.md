@@ -22,7 +22,7 @@ The OpenShift Lightspeed Agentic Console Plugin is a dynamic plugin that loads i
 ### CRD Inventory
 
 10. The plugin operates on these CRDs: `AgenticRun` (namespaced), `AgenticRunApproval` (namespaced), ApprovalPolicy (cluster-scoped), AnalysisResult (namespaced), ExecutionResult (namespaced), VerificationResult (namespaced), EscalationResult (namespaced), AgenticOLSConfig (cluster-scoped).
-11. Result CRs (AnalysisResult, ExecutionResult, VerificationResult, EscalationResult) are discovered via label selector `agentic.openshift.io/run: <run-name>` and correlated to their parent `AgenticRun` via `status.steps.<stage>.results[]` references.
+11. Result CRs (AnalysisResult, ExecutionResult, VerificationResult, EscalationResult) are discovered via label selector `agentic.openshift.io/run: <run-uid>` (the parent AgenticRun's `metadata.uid`) and correlated to their parent `AgenticRun` via `status.steps.<stage>.results[]` references.
 
 ## Configuration Surface
 
