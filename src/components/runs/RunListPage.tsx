@@ -38,7 +38,6 @@ import {
   AgenticRunCondition,
   AgenticRunK8s,
   derivePhaseFromConditions,
-  getPhaseDisplay,
   LightspeedAgenticRunGVK,
   LightspeedAgenticRunModel,
 } from '../../models/agenticrun';
@@ -47,34 +46,10 @@ import AgenticLayout from '../AgenticLayout';
 import { ConfirmationModal } from '../ConfirmationModal';
 import PreviewBadge from '../PreviewBadge';
 import AgenticCapabilitiesToggle from './AgenticCapabilitiesToggle';
+import { RunPhaseLabel } from './detail/RunPhaseLabel';
 
 const getTriggerDomain = (obj: AgenticRunK8s): string =>
   obj.metadata?.labels?.[RUN_LABEL_SOURCE] || '';
-
-const phaseFilter: RowFilter<AgenticRunK8s> = {
-  filter: (filterValue, obj) => {
-    const selected = filterValue?.selected || [];
-    const phase = derivePhaseFromConditions(obj?.status?.conditions as AgenticRunCondition[]);
-    return !selected.length || selected.includes(phase);
-  },
-  filterGroupName: 'Phase',
-  items: [
-    { id: 'Pending', title: 'Pending' },
-    { id: 'Analyzing', title: 'Analyzing' },
-    { id: 'Proposed', title: 'Proposed' },
-    { id: 'NoActionRequired', title: 'No action required' },
-    { id: 'Executing', title: 'Executing' },
-    { id: 'Verifying', title: 'Verifying' },
-    { id: 'Escalating', title: 'Escalating' },
-    { id: 'Completed', title: 'Completed' },
-    { id: 'Failed', title: 'Failed' },
-    { id: 'Denied', title: 'Denied' },
-    { id: 'Escalated', title: 'Escalated' },
-    { id: 'EmergencyStopped', title: 'Emergency Stopped' },
-  ],
-  reducer: (obj) => derivePhaseFromConditions(obj?.status?.conditions as AgenticRunCondition[]),
-  type: 'run-phase',
-};
 
 const RunKebab: React.FC<{
   obj: AgenticRunK8s;
@@ -207,9 +182,7 @@ const RunListPage: React.FC = () => {
   const RunRow = React.useCallback<React.FC<RowProps<AgenticRunK8s>>>(
     ({ activeColumnIDs, obj }) => {
       const triggerDomain = getTriggerDomain(obj);
-      const phase = getPhaseDisplay(
-        derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]),
-      );
+      const phase = derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]);
       const detailPath = `/lightspeed/runs/${obj.metadata.namespace}/${obj.metadata.name}`;
       return (
         <>
@@ -224,7 +197,7 @@ const RunListPage: React.FC = () => {
             {triggerDomain ? <Label variant="outline">{triggerDomain}</Label> : '-'}
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="phase">
-            <Label color={phase.color}>{phase.label}</Label>
+            <RunPhaseLabel phase={phase} />
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="tokens">
             {obj.status?.usage?.totalTokens?.toLocaleString() ?? '-'}
@@ -245,6 +218,31 @@ const RunListPage: React.FC = () => {
     const domainItems = Array.from(new Set((runs || []).map(getTriggerDomain).filter(Boolean)))
       .sort()
       .map((domain) => ({ id: domain, title: domain }));
+
+    const phaseFilter: RowFilter<AgenticRunK8s> = {
+      filter: (filterValue, obj) => {
+        const selected = filterValue?.selected || [];
+        const phase = derivePhaseFromConditions(obj?.status?.conditions as AgenticRunCondition[]);
+        return !selected.length || selected.includes(phase);
+      },
+      filterGroupName: t('Phase'),
+      items: [
+        { id: 'Pending', title: t('Pending') },
+        { id: 'Analyzing', title: t('Analyzing') },
+        { id: 'Proposed', title: t('Proposed') },
+        { id: 'NoActionRequired', title: t('No action required') },
+        { id: 'Executing', title: t('Executing') },
+        { id: 'Verifying', title: t('Verifying') },
+        { id: 'Escalating', title: t('Escalating') },
+        { id: 'Completed', title: t('Completed') },
+        { id: 'Failed', title: t('Failed') },
+        { id: 'Denied', title: t('Denied') },
+        { id: 'Escalated', title: t('Escalated') },
+        { id: 'EmergencyStopped', title: t('Emergency stopped') },
+      ],
+      reducer: (obj) => derivePhaseFromConditions(obj?.status?.conditions as AgenticRunCondition[]),
+      type: 'run-phase',
+    };
 
     const triggerDomainFilter: RowFilter<AgenticRunK8s> = {
       filter: (filterValue, obj) => {

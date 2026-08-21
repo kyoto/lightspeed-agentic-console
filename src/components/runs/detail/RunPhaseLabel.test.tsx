@@ -14,8 +14,25 @@ describe('RunPhaseLabel', () => {
     expect(screen.getByText('Emergency stopped')).toBeInTheDocument();
   });
 
-  test('falls back to the raw phase for an unknown value', () => {
-    renderWithProviders(<RunPhaseLabel phase={'Surprise' as never} />);
+  test('renders an icon for a known phase', () => {
+    const { container } = renderWithProviders(<RunPhaseLabel phase="Completed" />);
+    expect(container.querySelector('svg')).toBeInTheDocument();
+  });
+
+  test('applies the semantic colour class for a terminal phase', () => {
+    const { container } = renderWithProviders(<RunPhaseLabel phase="Failed" />);
+    expect(container.querySelector('.ols-plugin__run-phase-icon--danger')).toBeInTheDocument();
+  });
+
+  test('omits the colour class for a transient phase so it inherits currentColor', () => {
+    const { container } = renderWithProviders(<RunPhaseLabel phase="Analyzing" />);
+    expect(container.querySelector('[class*="run-phase-icon--"]')).not.toBeInTheDocument();
+    expect(container.querySelector('svg')).toBeInTheDocument();
+  });
+
+  test('falls back to the raw phase without an icon for an unknown value', () => {
+    const { container } = renderWithProviders(<RunPhaseLabel phase={'Surprise' as never} />);
     expect(screen.getByText('Surprise')).toBeInTheDocument();
+    expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
 });
