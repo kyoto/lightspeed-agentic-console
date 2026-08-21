@@ -89,7 +89,6 @@ There is no per-tab instantiation — the detail page uses a single-page section
 | Approval actions | Kubernetes API | Console SDK `k8sPatch` (HTTP PATCH) |
 | Configuration CRUD | Kubernetes API | Console SDK `k8sCreate`/`k8sPatch`/`k8sDelete` |
 | Log streaming | Kubernetes API | `consoleFetch` with ReadableStream |
-| Backend proxy | Lightspeed service | `/api/proxy/plugin/.../ols` (defined in `src/config.ts` but currently unused) |
 
 ## Implementation Notes
 
