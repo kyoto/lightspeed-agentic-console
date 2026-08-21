@@ -23,11 +23,18 @@ useK8sWatchResource(LightspeedAgenticRunGVK, {name, namespace})
 
 ### Result CR Correlation
 
-Result CRs are not watched by name. Instead:
+Result CRs are not watched by name. Instead, they are correlated by the run's UID via a label selector. The result watches are deferred until the run CR loads (so the UID is available):
 
-```
-useK8sWatchResource(AnalysisResultGVK, {namespace, selector: {matchLabels: {agentic.openshift.io/run: name}}, isList: true})
-  → Returns all AnalysisResults for this run
+```typescript
+// Wait for run to load and provide its UID
+const runUid = run?.metadata?.uid;
+const resultsWatchEnabled = watchEnabled && !!runUid;
+
+useK8sWatchResource(resultsWatchEnabled
+  ? {groupVersionKind: AnalysisResultGVK, namespace, isList: true, selector: {matchLabels: {[RESULT_LABEL_RUN]: runUid}}}
+  : null)
+  → null while run is loading (watch disabled)
+  → Returns all AnalysisResults for this run once runUid is available
   → filterLatest(results, run.status.steps.analysis.results)
     → Finds the result CR referenced by the last entry in the step's results array
 ```
