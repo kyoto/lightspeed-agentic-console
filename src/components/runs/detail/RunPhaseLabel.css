@@ -1,0 +1,22 @@
+.ols-plugin__run-phase {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--pf-t--global--spacer--xs);
+  white-space: nowrap;
+}
+
+.ols-plugin__run-phase-icon--danger {
+  color: var(--pf-t--global--icon--color--status--danger--default);
+}
+
+.ols-plugin__run-phase-icon--subtle {
+  color: var(--pf-t--global--icon--color--subtle);
+}
+
+.ols-plugin__run-phase-icon--success {
+  color: var(--pf-t--global--icon--color--status--success--default);
+}
+
+.ols-plugin__run-phase-icon--warning {
+  color: var(--pf-t--global--icon--color--status--warning--default);
+}
