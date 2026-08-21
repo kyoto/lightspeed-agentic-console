@@ -134,6 +134,7 @@
   "Stops all background analysis, active executions, and API token consumption for this cluster. You can re-enable agentic capabilities at any time.": "Stops all background analysis, active executions, and API token consumption for this cluster. You can re-enable agentic capabilities at any time.",
   "Successfully copied to clipboard!": "Successfully copied to clipboard!",
   "The AI actively monitors incoming alerts, collects diagnostic logs, correlates telemetry, and creates structured remediation plans.": "The AI actively monitors incoming alerts, collects diagnostic logs, correlates telemetry, and creates structured remediation plans.",
+  "The analysis failed. No remediation options are available.": "The analysis failed. No remediation options are available.",
   "The autonomous features of OpenShift Lightspeed use AI technology to generate output.": "The autonomous features of OpenShift Lightspeed use AI technology to generate output.",
   "The autonomous features of OpenShift Lightspeed use AI technology to generate output. Always review AI-generated content prior to use.": "The autonomous features of OpenShift Lightspeed use AI technology to generate output. Always review AI-generated content prior to use.",
   "The engine goes entirely code-silent. Background analysis halts, active executions freeze, and API token consumption drops to zero.": "The engine goes entirely code-silent. Background analysis halts, active executions freeze, and API token consumption drops to zero.",

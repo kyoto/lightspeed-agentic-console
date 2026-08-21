@@ -613,6 +613,21 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   return 'Pending';
 };
 
+// Returns a human-readable reason for a Failed run, taken from the failing
+// condition in the same precedence order derivePhaseFromConditions uses.
+export const deriveFailureReason = (conditions?: AgenticRunCondition[]): string | undefined => {
+  if (!conditions?.length) return undefined;
+
+  const get = (type: string) => conditions.find((c) => c.type === type);
+  const failed = ['Escalated', 'Verified', 'Executed', 'Analyzed']
+    .map((type) => get(type))
+    .find((c) => c?.status === 'False');
+
+  if (!failed) return undefined;
+  if (failed.reason && failed.message) return `${failed.reason}: ${failed.message}`;
+  return failed.message ?? failed.reason;
+};
+
 export type ApprovalMode = 'Automatic' | 'Manual';
 
 export type SandboxStepName = 'Analysis' | 'Execution' | 'Verification' | 'Escalation';

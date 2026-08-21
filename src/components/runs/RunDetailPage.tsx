@@ -27,7 +27,11 @@ import {
   Skeleton,
   Title,
 } from '@patternfly/react-core';
-import { InfoCircleIcon, OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
+import {
+  ExclamationCircleIcon,
+  InfoCircleIcon,
+  OutlinedQuestionCircleIcon,
+} from '@patternfly/react-icons';
 import type { FC, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
@@ -274,20 +278,52 @@ const RunDetailPage: FC = () => {
           </>
         );
 
+      case 'Failed':
+        return v.options.length > 0 ? renderTerminalSummary(v) : renderFailedCard(v);
+
       default:
         if (TERMINAL_PHASES.includes(v.phase)) {
-          return (
-            <>
-              {v.options.length > 0 && renderOptionCards({})}
-              {v.execution && <ExecutionSummary execution={v.execution} />}
-              {v.verification && <VerificationSummary verification={v.verification} />}
-              {v.escalation && <EscalationSummary escalation={v.escalation} />}
-            </>
-          );
+          return renderTerminalSummary(v);
         }
         return null;
     }
   };
+
+  const renderTerminalSummary = (v: AgenticRunView): ReactNode => (
+    <>
+      {v.options.length > 0 && renderOptionCards({})}
+      {v.execution && <ExecutionSummary execution={v.execution} />}
+      {v.verification && <VerificationSummary verification={v.verification} />}
+      {v.escalation && <EscalationSummary escalation={v.escalation} />}
+    </>
+  );
+
+  const renderFailedCard = (v: AgenticRunView): ReactNode => (
+    <Card>
+      <CardBody>
+        <Flex direction={{ default: 'column' }} gap={{ default: 'gapSm' }}>
+          <Flex
+            alignItems={{ default: 'alignItemsCenter' }}
+            justifyContent={{ default: 'justifyContentSpaceBetween' }}
+          >
+            <FlexItem>
+              <Title headingLevel="h4">{t('Analysis')}</Title>
+            </FlexItem>
+            <FlexItem>
+              <Label color="red" icon={<ExclamationCircleIcon />} isCompact>
+                {t('Failed')}
+              </Label>
+            </FlexItem>
+          </Flex>
+          <FlexItem>
+            <Content component={ContentVariants.p}>
+              {v.failureReason ?? t('The analysis failed. No remediation options are available.')}
+            </Content>
+          </FlexItem>
+        </Flex>
+      </CardBody>
+    </Card>
+  );
 
   const renderOptionCards = (opts: { showSpinner?: boolean }) => {
     if (!view) return null;
@@ -393,7 +429,9 @@ const RunDetailPage: FC = () => {
             </Flex>
           </Content>
 
-          {view?.failureReason && <Alert isInline title={view.failureReason} variant="danger" />}
+          {view?.failureReason && !(view.phase === 'Failed' && view.options.length === 0) && (
+            <Alert isInline title={view.failureReason} variant="danger" />
+          )}
 
           {resultsError && (
             <Alert isInline title={t('Unable to load run results.')} variant="warning" />

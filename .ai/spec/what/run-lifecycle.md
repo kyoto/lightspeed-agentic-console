@@ -60,6 +60,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 19d. [PLANNED: OLS-3579] Download plan button on remediation option cards — verify existing JSON download aligns with design; update if different.
 19e. The "Analysis request" section displays the original prompt or alert event string that initiated the run, with a help popover explaining its purpose. Below it, the analysis sandbox log viewer is available when the sandbox has run.
 19f. When remediation options exist, root cause analysis is displayed within each remediation option card. Each card shows the detected cause and detail, alongside estimated impact, proposed agent commands, rollback plan, and verification steps. When no remediation options are available, root cause analysis is shown below the analysis request section.
+21a. When the run is in the `Failed` phase and analysis produced no remediation options, the remediation hub MUST render a failure card — a red "Failed" label with an error icon and the failure reason text — rather than the empty terminal content that would otherwise show. The failure reason is `view.failureReason`, which falls back to the failing AgenticRun condition's `reason: message` (via `deriveFailureReason`) when no result CR reports a `status.failureReason`. When a `Failed` run does have remediation options (e.g., a mid-run execution or verification failure), the hub renders the normal terminal summary (option cards and stage summaries) unchanged.
 
 ### Refine Flow [PLANNED]
 
@@ -81,7 +82,7 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 31. The detail page watches `EscalationResult` CRs via the same label-selector pattern as other result CRs (`agentic.openshift.io/run`) and maps them into the run view (`EscalationView`).
 32. While the run is in the `Escalating` phase: if escalation requires manual approval, show `StageApprovalBanner`; otherwise show `StageInProgress` with sandbox log streaming from `status.steps.escalation.sandbox`.
 33. On terminal phases that include an escalation result, the page renders an `EscalationSummary` card. The card body is freeform AI-generated markdown from `EscalationResult.status.summary` and, when present and different, `status.content` — rendered as unmarked markdown (not titled subsections or an expandable section).
-34. `EscalationSummary` MUST NOT render when the mapped view has no `summary`, `content`, or escalation sandbox. Failure-only results (system/agent error with only `status.failureReason`) surface via the page-level danger alert that aggregates stage `failureReason` values, not as an empty card.
+34. `EscalationSummary` MUST NOT render when the mapped view has no `summary`, `content`, or escalation sandbox. Failure-only results (system/agent error with only `status.failureReason`) surface via the page-level danger alert that aggregates stage `failureReason` values, not as an empty card. The page-level alert is suppressed for a `Failed` run with no remediation options — that failure is shown in the remediation hub failure card instead (see 21a).
 35. Timeline events include Escalation started/completed conditions from the `EscalationResult` (same condition-to-event mapping as Analysis/Execution/Verification).
 
 ## Constraints

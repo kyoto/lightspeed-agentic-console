@@ -17,6 +17,7 @@ import {
   ApprovalStage,
   ApprovalStageType,
   ApproverInfo,
+  deriveFailureReason,
   derivePhaseFromConditions,
   EscalationResultGVK,
   EscalationResultK8s,
@@ -338,7 +339,7 @@ export const buildExecutionRecord = (
   return hasRenderableField ? record : undefined;
 };
 
-const mapToAgenticRunView = (
+export const mapToAgenticRunView = (
   run: AgenticRunK8s | undefined,
   analysis: AnalysisResultK8s | undefined,
   execution: ExecutionResultK8s | undefined,
@@ -355,7 +356,8 @@ const mapToAgenticRunView = (
     analysis?.status?.failureReason ??
     execution?.status?.failureReason ??
     verification?.status?.failureReason ??
-    escalation?.status?.failureReason;
+    escalation?.status?.failureReason ??
+    (phase === 'Failed' ? deriveFailureReason(run.status?.conditions) : undefined);
 
   const execStage = (approval?.spec?.stages ?? []).find((s) => s.type === 'Execution');
   const executedOptionIndex = execStage?.execution?.option;

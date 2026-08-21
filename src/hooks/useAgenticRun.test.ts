@@ -18,6 +18,7 @@ import {
   mapOption,
   mapRootCause,
   mapTimeline,
+  mapToAgenticRunView,
 } from './useAgenticRun';
 
 const makeCondition = (
@@ -660,5 +661,124 @@ describe('mapTimeline escalation events', () => {
     );
     expect(failedEvent).toBeDefined();
     expect(failedEvent!.description).toBe('Sandbox crashed');
+  });
+});
+
+describe('mapToAgenticRunView failureReason precedence', () => {
+  const t = ((key: string) => key) as unknown as Parameters<typeof mapToAgenticRunView>[6];
+
+  const makeRun = (conditions: AgenticRunCondition[]): AgenticRunK8s =>
+    ({
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'AgenticRun',
+      metadata: { name: 'run-1', namespace: 'default', creationTimestamp: '2026-01-01T00:00:00Z' },
+      spec: { request: 'Fix alert' },
+      status: { conditions },
+    }) as AgenticRunK8s;
+
+  const makeAnalysis = (failureReason?: string): AnalysisResultK8s =>
+    ({
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'AnalysisResult',
+      metadata: { name: 'analysis-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: { ...(failureReason ? { failureReason } : {}) },
+    }) as AnalysisResultK8s;
+
+  const makeExecution = (failureReason?: string): ExecutionResultK8s =>
+    ({
+      apiVersion: 'agentic.openshift.io/v1alpha1',
+      kind: 'ExecutionResult',
+      metadata: { name: 'execution-1', namespace: 'default' },
+      spec: { agenticRunName: 'run-1' },
+      status: { ...(failureReason ? { failureReason } : {}) },
+    }) as ExecutionResultK8s;
+
+  test('returns undefined when the run has no name', () => {
+    expect(
+      mapToAgenticRunView(undefined, undefined, undefined, undefined, undefined, undefined, t),
+    ).toBeUndefined();
+  });
+
+  test('prefers the analysis result failureReason over the condition fallback', () => {
+    const run = makeRun([makeCondition('Analyzed', 'False', 'AnalysisFailed')]);
+    const view = mapToAgenticRunView(
+      run,
+      makeAnalysis('Analysis pod exceeded memory limit'),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      t,
+    );
+
+    expect(view?.phase).toBe('Failed');
+    expect(view?.failureReason).toBe('Analysis pod exceeded memory limit');
+  });
+
+  test('falls back to the execution result failureReason when analysis reports none', () => {
+    const run = makeRun([
+      makeCondition('Analyzed', 'True'),
+      makeCondition('Executed', 'False', 'ExecutionFailed'),
+    ]);
+    const view = mapToAgenticRunView(
+      run,
+      makeAnalysis(),
+      makeExecution('Insufficient permissions to patch CoreDNS ConfigMap'),
+      undefined,
+      undefined,
+      undefined,
+      t,
+    );
+
+    expect(view?.phase).toBe('Failed');
+    expect(view?.failureReason).toBe('Insufficient permissions to patch CoreDNS ConfigMap');
+  });
+
+  test('falls back to the failing condition via deriveFailureReason when no result CR reports one', () => {
+    const run = makeRun([
+      {
+        type: 'Analyzed',
+        status: 'False',
+        reason: 'SandboxFailed',
+        message: '422 Unprocessable Entity',
+      },
+    ]);
+    const view = mapToAgenticRunView(
+      run,
+      makeAnalysis(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      t,
+    );
+
+    expect(view?.phase).toBe('Failed');
+    expect(view?.failureReason).toBe('SandboxFailed: 422 Unprocessable Entity');
+  });
+
+  test('does not derive a condition failure reason for a non-Failed run (Denied with Escalated=False)', () => {
+    const run = makeRun([
+      {
+        type: 'Escalated',
+        status: 'False',
+        reason: 'EscalationFailed',
+        message: 'sandbox crashed',
+      },
+      makeCondition('Denied', 'True'),
+    ]);
+    const view = mapToAgenticRunView(
+      run,
+      makeAnalysis(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      t,
+    );
+
+    expect(view?.phase).toBe('Denied');
+    expect(view?.failureReason).toBeUndefined();
   });
 });
