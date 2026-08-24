@@ -16,6 +16,9 @@ export const useK8sWatchResource = vi.fn().mockReturnValue([undefined, false, un
 export const useAccessReview = vi.fn().mockReturnValue([true, false]);
 export const useK8sModels = vi.fn().mockReturnValue([{}, false]);
 
+export const DocumentTitle = ({ children }: { children?: React.ReactNode }): React.ReactNode =>
+  children;
+
 export const ResourceLink = ({ name }: { name?: string }): React.ReactElement =>
   React.createElement('span', { 'data-test': 'resource-link' }, name);
 

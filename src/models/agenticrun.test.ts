@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { derivePhaseFromConditions, getPhaseDisplay } from './agenticrun';
+import { deriveFailureReason, derivePhaseFromConditions, getPhaseDisplay } from './agenticrun';
 import { cond } from '../test-helpers';
 
 describe('derivePhaseFromConditions', () => {
@@ -132,6 +132,42 @@ describe('derivePhaseFromConditions', () => {
     expect(
       derivePhaseFromConditions([cond('EmergencyStopped', 'True'), cond('Denied', 'True')]),
     ).toBe('EmergencyStopped');
+  });
+});
+
+describe('deriveFailureReason', () => {
+  it('returns undefined for undefined conditions', () => {
+    expect(deriveFailureReason(undefined)).toBeUndefined();
+  });
+
+  it('returns undefined when no condition has failed', () => {
+    expect(deriveFailureReason([cond('Analyzed', 'True')])).toBeUndefined();
+  });
+
+  it('combines reason and message for a failed Analyzed condition', () => {
+    expect(
+      deriveFailureReason([cond('Analyzed', 'False', 'SandboxFailed', '422 Unprocessable Entity')]),
+    ).toBe('SandboxFailed: 422 Unprocessable Entity');
+  });
+
+  it('returns only the message when reason is absent', () => {
+    expect(deriveFailureReason([cond('Analyzed', 'False', undefined, 'something broke')])).toBe(
+      'something broke',
+    );
+  });
+
+  it('returns only the reason when message is absent', () => {
+    expect(deriveFailureReason([cond('Analyzed', 'False', 'SandboxFailed')])).toBe('SandboxFailed');
+  });
+
+  it('prefers the earliest failing condition in phase precedence order', () => {
+    expect(
+      deriveFailureReason([
+        cond('Analyzed', 'True'),
+        cond('Executed', 'False', 'ExecutionFailed', 'command failed'),
+        cond('Verified', 'False', 'VerificationFailed', 'check failed'),
+      ]),
+    ).toBe('VerificationFailed: check failed');
   });
 });
 
