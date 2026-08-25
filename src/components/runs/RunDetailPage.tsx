@@ -403,22 +403,18 @@ const RunDetailPage: FC = () => {
                       <ResourceLink kind="Namespace" name={ns} />
                     </FlexItem>
                   ))}
+                {view?.source && (
+                  <FlexItem>
+                    <Label
+                      isCompact
+                      variant="outline"
+                    >{`${t('Trigger domain')}: ${view.source}`}</Label>
+                  </FlexItem>
+                )}
               </Flex>
               {view && (
                 <FlexItem>
-                  <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    <FlexItem>
-                      <RunPhaseLabel phase={view.phase} />
-                    </FlexItem>
-                    {view.source && (
-                      <FlexItem>
-                        <Label
-                          isCompact
-                          variant="outline"
-                        >{`${t('Trigger domain')}: ${view.source}`}</Label>
-                      </FlexItem>
-                    )}
-                  </Flex>
+                  <RunPhaseLabel phase={view.phase} />
                 </FlexItem>
               )}
               <FlexItem>
