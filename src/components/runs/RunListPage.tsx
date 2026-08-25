@@ -51,6 +51,9 @@ import { RunPhaseLabel } from './detail/RunPhaseLabel';
 const getTriggerDomain = (obj: AgenticRunK8s): string =>
   obj.metadata?.labels?.[RUN_LABEL_SOURCE] || '';
 
+const getTargetNamespaces = (obj: AgenticRunK8s): string[] =>
+  [...(obj.spec?.targetNamespaces ?? [])].sort();
+
 const RunKebab: React.FC<{
   obj: AgenticRunK8s;
   canDelete: boolean;
@@ -151,7 +154,17 @@ const RunListPage: React.FC = () => {
   const columns: TableColumn<AgenticRunK8s>[] = React.useMemo(
     () => [
       { id: 'name', sort: 'metadata.name', title: t('Name') },
-      { id: 'namespace', sort: 'metadata.namespace', title: t('Namespace') },
+      {
+        id: 'namespace',
+        sort: (data, direction) =>
+          [...data].sort((a, b) => {
+            const cmp = getTargetNamespaces(a)
+              .join(',')
+              .localeCompare(getTargetNamespaces(b).join(','));
+            return direction === 'desc' ? -cmp : cmp;
+          }),
+        title: t('Target namespaces'),
+      },
       {
         id: 'trigger-domain',
         sort: (data, direction) =>
@@ -183,6 +196,7 @@ const RunListPage: React.FC = () => {
     ({ activeColumnIDs, obj }) => {
       const triggerDomain = getTriggerDomain(obj);
       const phase = derivePhaseFromConditions(obj.status?.conditions as AgenticRunCondition[]);
+      const targetNamespaces = getTargetNamespaces(obj);
       const detailPath = `/lightspeed/runs/${obj.metadata.namespace}/${obj.metadata.name}`;
       return (
         <>
@@ -191,7 +205,9 @@ const RunListPage: React.FC = () => {
             <Link to={detailPath}>{obj.metadata.name}</Link>
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="namespace">
-            <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
+            {targetNamespaces.length > 0
+              ? targetNamespaces.map((ns) => <ResourceLink key={ns} kind="Namespace" name={ns} />)
+              : '-'}
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="trigger-domain">
             {triggerDomain ? <Label variant="outline">{triggerDomain}</Label> : '-'}

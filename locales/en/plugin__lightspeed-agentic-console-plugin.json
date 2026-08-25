@@ -141,6 +141,7 @@
   "Status": "Status",
   "Stops all background analysis, active executions, and API token consumption for this cluster. You can re-enable agentic capabilities at any time.": "Stops all background analysis, active executions, and API token consumption for this cluster. You can re-enable agentic capabilities at any time.",
   "Successfully copied to clipboard!": "Successfully copied to clipboard!",
+  "Target namespaces": "Target namespaces",
   "The AI actively monitors incoming alerts, collects diagnostic logs, correlates telemetry, and creates structured remediation plans.": "The AI actively monitors incoming alerts, collects diagnostic logs, correlates telemetry, and creates structured remediation plans.",
   "The analysis failed. No remediation options are available.": "The analysis failed. No remediation options are available.",
   "The autonomous features of OpenShift Lightspeed use AI technology to generate output.": "The autonomous features of OpenShift Lightspeed use AI technology to generate output.",
