@@ -192,19 +192,15 @@ const RunDetailPage: FC = () => {
               </EmptyState>
             )}
             {!v.advisory && (
-              <Flex>
-                <FlexItem>
-                  <ApprovalGatedButton
-                    canApprove={canApprove}
-                    canApproveLoading={canApproveLoading}
-                    mutationInProgress={mutationInProgress}
-                    onClick={() => setDenyingStage('Execution')}
-                    variant="secondary"
-                  >
-                    {t('Deny run')}
-                  </ApprovalGatedButton>
-                </FlexItem>
-              </Flex>
+              <ApprovalGatedButton
+                canApprove={canApprove}
+                canApproveLoading={canApproveLoading}
+                mutationInProgress={mutationInProgress}
+                onClick={() => setDenyingStage('Execution')}
+                variant="secondary"
+              >
+                {t('Deny run')}
+              </ApprovalGatedButton>
             )}
           </>
         );
@@ -403,22 +399,18 @@ const RunDetailPage: FC = () => {
                       <ResourceLink kind="Namespace" name={ns} />
                     </FlexItem>
                   ))}
+                {view?.source && (
+                  <FlexItem>
+                    <Label
+                      isCompact
+                      variant="outline"
+                    >{`${t('Trigger domain')}: ${view.source}`}</Label>
+                  </FlexItem>
+                )}
               </Flex>
               {view && (
                 <FlexItem>
-                  <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    <FlexItem>
-                      <RunPhaseLabel phase={view.phase} />
-                    </FlexItem>
-                    {view.source && (
-                      <FlexItem>
-                        <Label
-                          isCompact
-                          variant="outline"
-                        >{`${t('Trigger domain')}: ${view.source}`}</Label>
-                      </FlexItem>
-                    )}
-                  </Flex>
+                  <RunPhaseLabel phase={view.phase} />
                 </FlexItem>
               )}
               <FlexItem>
@@ -554,23 +546,19 @@ const RunDetailPage: FC = () => {
               (needsApproval.Analysis ||
                 needsApproval.Verification ||
                 needsApproval.Escalation) && (
-                <Flex>
-                  <FlexItem>
-                    <ApprovalGatedButton
-                      canApprove={canApprove}
-                      canApproveLoading={canApproveLoading}
-                      mutationInProgress={mutationInProgress}
-                      onClick={() => {
-                        if (needsApproval.Analysis) setDenyingStage('Analysis');
-                        else if (needsApproval.Verification) setDenyingStage('Verification');
-                        else if (needsApproval.Escalation) setDenyingStage('Escalation');
-                      }}
-                      variant="secondary"
-                    >
-                      {t('Deny run')}
-                    </ApprovalGatedButton>
-                  </FlexItem>
-                </Flex>
+                <ApprovalGatedButton
+                  canApprove={canApprove}
+                  canApproveLoading={canApproveLoading}
+                  mutationInProgress={mutationInProgress}
+                  onClick={() => {
+                    if (needsApproval.Analysis) setDenyingStage('Analysis');
+                    else if (needsApproval.Verification) setDenyingStage('Verification');
+                    else if (needsApproval.Escalation) setDenyingStage('Escalation');
+                  }}
+                  variant="secondary"
+                >
+                  {t('Deny run')}
+                </ApprovalGatedButton>
               )}
 
             {resultsLoaded && view && view.timeline.length > 0 && (
