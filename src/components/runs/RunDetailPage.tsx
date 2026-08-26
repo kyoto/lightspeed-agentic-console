@@ -192,15 +192,17 @@ const RunDetailPage: FC = () => {
               </EmptyState>
             )}
             {!v.advisory && (
-              <ApprovalGatedButton
-                canApprove={canApprove}
-                canApproveLoading={canApproveLoading}
-                mutationInProgress={mutationInProgress}
-                onClick={() => setDenyingStage('Execution')}
-                variant="secondary"
-              >
-                {t('Deny run')}
-              </ApprovalGatedButton>
+              <div>
+                <ApprovalGatedButton
+                  canApprove={canApprove}
+                  canApproveLoading={canApproveLoading}
+                  mutationInProgress={mutationInProgress}
+                  onClick={() => setDenyingStage('Execution')}
+                  variant="secondary"
+                >
+                  {t('Deny run')}
+                </ApprovalGatedButton>
+              </div>
             )}
           </>
         );
@@ -546,19 +548,21 @@ const RunDetailPage: FC = () => {
               (needsApproval.Analysis ||
                 needsApproval.Verification ||
                 needsApproval.Escalation) && (
-                <ApprovalGatedButton
-                  canApprove={canApprove}
-                  canApproveLoading={canApproveLoading}
-                  mutationInProgress={mutationInProgress}
-                  onClick={() => {
-                    if (needsApproval.Analysis) setDenyingStage('Analysis');
-                    else if (needsApproval.Verification) setDenyingStage('Verification');
-                    else if (needsApproval.Escalation) setDenyingStage('Escalation');
-                  }}
-                  variant="secondary"
-                >
-                  {t('Deny run')}
-                </ApprovalGatedButton>
+                <div>
+                  <ApprovalGatedButton
+                    canApprove={canApprove}
+                    canApproveLoading={canApproveLoading}
+                    mutationInProgress={mutationInProgress}
+                    onClick={() => {
+                      if (needsApproval.Analysis) setDenyingStage('Analysis');
+                      else if (needsApproval.Verification) setDenyingStage('Verification');
+                      else if (needsApproval.Escalation) setDenyingStage('Escalation');
+                    }}
+                    variant="secondary"
+                  >
+                    {t('Deny run')}
+                  </ApprovalGatedButton>
+                </div>
               )}
 
             {resultsLoaded && view && view.timeline.length > 0 && (
