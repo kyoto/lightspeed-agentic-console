@@ -218,7 +218,6 @@ export type AgenticRunPhase =
   | 'Pending'
   | 'Analyzing'
   | 'Proposed'
-  | 'NoActionRequired'
   | 'Executing'
   | 'Verifying'
   | 'Escalating'
@@ -550,8 +549,6 @@ export const getPhaseDisplay = (phase?: AgenticRunPhase | string): PhaseDisplay 
       return { color: 'teal', label: 'Executing' };
     case 'Failed':
       return { color: 'red', label: 'Failed' };
-    case 'NoActionRequired':
-      return { color: 'green', label: 'No action required' };
     case 'Pending':
       return { color: 'grey', label: 'Pending' };
     case 'Proposed':
@@ -603,7 +600,7 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   const analyzed = get('Analyzed');
   if (analyzed) {
     if (analyzed.status === 'True') {
-      if (analyzed.reason === 'NoActionRequired') return 'NoActionRequired';
+      if (analyzed.reason === 'NoActionRequired') return 'Completed';
       return 'Proposed';
     }
     if (analyzed.status === 'Unknown') return 'Analyzing';
@@ -611,6 +608,11 @@ export const derivePhaseFromConditions = (conditions?: AgenticRunCondition[]): A
   }
 
   return 'Pending';
+};
+
+export const isNoActionRequired = (conditions?: AgenticRunCondition[]): boolean => {
+  const analyzed = conditions?.find((c) => c.type === 'Analyzed');
+  return analyzed?.status === 'True' && analyzed.reason === 'NoActionRequired';
 };
 
 // Returns a human-readable reason for a Failed run, taken from the failing

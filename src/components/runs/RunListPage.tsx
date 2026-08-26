@@ -246,7 +246,6 @@ const RunListPage: React.FC = () => {
         { id: 'Pending', title: t('Pending') },
         { id: 'Analyzing', title: t('Analyzing') },
         { id: 'Proposed', title: t('Proposed') },
-        { id: 'NoActionRequired', title: t('No action required') },
         { id: 'Executing', title: t('Executing') },
         { id: 'Verifying', title: t('Verifying') },
         { id: 'Escalating', title: t('Escalating') },

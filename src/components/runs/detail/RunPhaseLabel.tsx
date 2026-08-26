@@ -1,7 +1,6 @@
 import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 import RhUiBanIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-ban-icon';
 import RhUiCheckCircleFillIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-check-circle-fill-icon';
-import RhUiCheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-check-circle-icon';
 import RhUiErrorFillIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-error-fill-icon';
 import RhUiInProgressIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-in-progress-icon';
 import RhUiPauseCircleIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-pause-circle-icon';
@@ -27,7 +26,6 @@ const STATUS_ICON: Record<AgenticRunPhase, ComponentClass<SVGIconProps>> = {
   Escalating: RhUiWarningFillIcon,
   Executing: RhUiRunningIcon,
   Failed: RhUiErrorFillIcon,
-  NoActionRequired: RhUiCheckCircleIcon,
   Pending: RhUiPendingIcon,
   Proposed: RhUiPauseCircleIcon,
   Verifying: RhUiSyncIcon,
@@ -41,7 +39,6 @@ const STATUS_ICON_COLOR_CLASS: Partial<Record<AgenticRunPhase, string>> = {
   Escalated: 'ols-plugin__run-phase-icon--warning',
   Escalating: 'ols-plugin__run-phase-icon--warning',
   Failed: 'ols-plugin__run-phase-icon--danger',
-  NoActionRequired: 'ols-plugin__run-phase-icon--success',
   Pending: 'ols-plugin__run-phase-icon--subtle',
 };
 
