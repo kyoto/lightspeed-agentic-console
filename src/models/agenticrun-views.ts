@@ -6,7 +6,6 @@ export const TERMINAL_PHASES: AgenticRunPhase[] = [
   'Completed',
   'Failed',
   'Denied',
-  'NoActionRequired',
   'EmergencyStopped',
   'Escalated',
 ];
@@ -104,6 +103,7 @@ export interface AgenticRunView {
   request: string;
   source?: string;
   advisory?: boolean;
+  noActionRequired?: boolean;
   targetNamespaces?: string[];
   failureReason?: string;
   rootCause?: RootCauseView;

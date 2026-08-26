@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveFailureReason, derivePhaseFromConditions, getPhaseDisplay } from './agenticrun';
+import {
+  deriveFailureReason,
+  derivePhaseFromConditions,
+  getPhaseDisplay,
+  isNoActionRequired,
+} from './agenticrun';
 import { cond } from '../test-helpers';
 
 describe('derivePhaseFromConditions', () => {
@@ -20,13 +25,13 @@ describe('derivePhaseFromConditions', () => {
     expect(derivePhaseFromConditions([cond('Analyzed', 'True')])).toBe('Proposed');
   });
 
-  it('returns NoActionRequired for Analyzed=True with reason NoActionRequired', () => {
+  it('returns Completed for Analyzed=True with reason NoActionRequired', () => {
     expect(derivePhaseFromConditions([cond('Analyzed', 'True', 'NoActionRequired')])).toBe(
-      'NoActionRequired',
+      'Completed',
     );
   });
 
-  it('Denied takes priority over NoActionRequired', () => {
+  it('Denied takes priority over Analyzed NoActionRequired', () => {
     expect(
       derivePhaseFromConditions([
         cond('Denied', 'True'),
@@ -176,7 +181,6 @@ describe('getPhaseDisplay', () => {
     ['Pending', { color: 'grey', label: 'Pending' }],
     ['Analyzing', { color: 'blue', label: 'Analyzing' }],
     ['Proposed', { color: 'blue', label: 'Proposed' }],
-    ['NoActionRequired', { color: 'green', label: 'No action required' }],
     ['Executing', { color: 'teal', label: 'Executing' }],
     ['Verifying', { color: 'teal', label: 'Verifying' }],
     ['Escalating', { color: 'orange', label: 'Escalating' }],
@@ -201,5 +205,19 @@ describe('getPhaseDisplay', () => {
       color: 'grey',
       label: 'Unknown',
     });
+  });
+});
+
+describe('isNoActionRequired', () => {
+  it('returns true for Analyzed=True with reason NoActionRequired', () => {
+    expect(isNoActionRequired([cond('Analyzed', 'True', 'NoActionRequired')])).toBe(true);
+  });
+
+  it('returns false for Analyzed=True with a different reason', () => {
+    expect(isNoActionRequired([cond('Analyzed', 'True', 'OtherReason')])).toBe(false);
+  });
+
+  it('returns false when Analyzed condition is absent', () => {
+    expect(isNoActionRequired(undefined)).toBe(false);
   });
 });
