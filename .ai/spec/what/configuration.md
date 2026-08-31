@@ -14,6 +14,7 @@ The Configuration page (`/lightspeed/configuration`) provides cluster-wide setti
 
 4. The ApprovalPolicy CR is cluster-scoped with a singleton name `cluster`.
 5. Each of the four stages (Analysis, Execution, Verification, Escalation) can be set to `Manual` or `Automatic` via toggle groups.
+5a. Switching the **Execution** stage from `Manual` to `Automatic` opens an acknowledgment modal (`ExecutionPolicyModal`) requiring the user to confirm two checkboxes (automatic-execution and RBAC acknowledgment) before the toggle takes effect. The other stages switch to `Automatic` without a confirmation modal.
 6. Max retry attempts are configurable between 1 and 3 via a number input.
 7. If the ApprovalPolicy CR does not exist, saving creates it with `maxConcurrentAgenticRuns: 5` as the default.
 8. If the CR exists, saving patches `spec.stages` and `spec.maxAttempts` via replace operations.

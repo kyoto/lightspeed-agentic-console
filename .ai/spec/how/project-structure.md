@@ -8,7 +8,8 @@
 | `src/utils/approval.ts` | `findStage`, `getStageStatus`, `stageNeedsApproval`, `buildApprovalPatch` | Pure functions for approval logic |
 | `src/utils/markdown.ts` | `renderMarkdown`, `renderMarkdownInline` | Low-level sanitized markdown rendering (marked + DOMPurify). `renderMarkdown` emits block HTML via `marked.parse`; `renderMarkdownInline` emits inline HTML via `marked.parseInline`. All links are hardened with `target="_blank" rel="noopener noreferrer"`. Prefer `MarkdownContent` component over direct calls. |
 | `src/utils/agenticrun-utils.ts` | `buildPodLogUrl`, `getOutcomeStatus`, `getReversibilityColor` | Helpers for pod log URLs, outcome status mapping, reversibility colors |
-| `src/components/runs/RunListPage.tsx` | `RunListPage` | Run list with virtualized table and phase filters |
+| `src/utils/rbac-utils.ts` | `flattenRbacRules`, `resolveKind`, `isWriteVerb`, `hasWriteVerb`, `formatResource`, `summarizeWritePermissions`, `countNamespaceRules`, `countClusterRules`, `ScopedPermissionRule` | Flattens the grouped `namespaceScoped`/`clusterScoped` RBAC wire contract into one ordered rule list and derives write-verb summaries/counts for `RequiredPermissions` |
+| `src/components/runs/RunListPage.tsx` | `RunListPage` | Run list with virtualized table (target-namespaces, trigger-domain, phase, tokens, age, kebab columns), phase + trigger-domain filters, and per-row delete |
 | `src/components/runs/RunDetailPage.tsx` | `RunDetailPage` | Section-based run detail page, delegates to `detail/` subcomponents |
 | `src/components/runs/detail/AnalysisSummary.tsx` | `AnalysisSummary` | Analysis request display, analysis loading/streaming state |
 | `src/components/runs/detail/RemediationOptionCard.tsx` | `RemediationOptionCard` | Expandable remediation option card with embedded root cause analysis |
@@ -19,8 +20,13 @@
 | `src/components/runs/detail/RunTimeline.tsx` | `RunTimeline` | Chronological event timeline |
 | `src/components/runs/detail/RequiredPermissions.tsx` | `RequiredPermissions` | RBAC permission summary and expandable detail table for remediation options |
 | `src/components/runs/detail/StageInProgress.tsx` | `StageInProgress` | In-progress stage card with embedded log viewer |
+| `src/components/runs/detail/StageApprovalBanner.tsx` | `StageApprovalBanner` | Approval prompt shown in place of the in-progress/skeleton UI when a non-Execution stage requires manual approval (OLS-3688) |
 | `src/components/runs/detail/SandboxLogViewer.tsx` | `SandboxLogViewer` | Expandable log viewer with streaming and search |
 | `src/components/AgenticLayout.tsx` | `AgenticLayout` | Watches `AgenticOLSConfig` CR; renders a system-suspended danger banner above page content when `spec.suspended` is true |
+| `src/components/runs/AgenticCapabilitiesToggle.tsx` | `AgenticCapabilitiesToggle` | Card on the run list page that suspends/resumes the agentic system by creating/patching `AgenticOLSConfig.spec.suspended`; RBAC-gated via `useAccessReview` (create/patch) |
+| `src/components/runs/agenticCapabilitiesUtils.ts` | `AGENTIC_OLS_CONFIG_NAME`, `buildAgenticOLSConfig`, `buildSuspendedPatch`, `isNotFoundError` | Pure helpers for the `AgenticOLSConfig` singleton and its suspended patch |
+| `src/components/PreviewBadge.tsx` | `PreviewBadge` | "Dev preview" label shown as the run list page header badge |
+| `src/components/ApprovalGatedButton.tsx` | `ApprovalGatedButton` | Reusable approve/deny button with `isAriaDisabled` gating, permission tooltip, and loading state; used by `RemediationOptionCard`, `StageApprovalBanner`, `RunDetailPage` |
 | `src/components/MarkdownContent.tsx` | `MarkdownContent` | Reusable component for rendering sanitized markdown. Wraps `renderMarkdown`/`renderMarkdownInline` with a block-level container (defaults to PatternFly `Content` div). Props: `text` (markdown string), `component` (wrapper element, default `Content`), `inline` (use inline parser for short text like titles). Prevents invalid nested HTML by binding the parse mode to the correct container. |
 | `src/components/CodeBlockWithClipboard.tsx` | `CodeBlockWithClipboard` | Reusable code block with clipboard copy button and expandable truncation for long content |
 | `src/components/ConfirmationModal.tsx` | `ConfirmationModal` | Reusable confirmation modal with confirm/cancel actions, loading state, and inline error display |
@@ -32,6 +38,7 @@
 | `src/hooks/useSandboxLogStream.ts` | `useSandboxLogStream` | Streams audit lines from sandbox pod logs |
 | `src/components/configuration/ConfigurationPage.tsx` | `ConfigurationPage` | Configuration page rendering the approval policy view |
 | `src/components/configuration/ApprovalPolicy.tsx` | `ApprovalPolicy` | Approval policy CRUD |
+| `src/components/configuration/ExecutionPolicyModal.tsx` | `ExecutionPolicyModal` | Acknowledgment modal (automatic-execution + RBAC checkboxes) confirming a switch of a stage to automatic approval |
 | `console-extensions.json` | — | Plugin extension declarations (routes, nav items) |
 | `webpack.config.ts` | — | Module federation and build configuration |
 | `playwright.config.ts` | — | Playwright e2e test configuration |

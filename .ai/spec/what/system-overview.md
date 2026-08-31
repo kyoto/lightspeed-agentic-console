@@ -41,7 +41,7 @@ The OpenShift Lightspeed Agentic Console Plugin is a dynamic plugin that loads i
 
 | Ticket | Summary |
 |---|---|
-| OLS-3578 | Run list page enhancements: nav restructure, trigger domain column/filter, tokens consumed column, kebab delete, page title/description |
-| OLS-3579 | Run detail page enhancements: legal disclaimers, stop button, token count, execution record, download plan, approval buttons, confidence tag removal |
-| OLS-3688 | Stage approval gates: extend approve/deny buttons to Analysis, Verification, and Escalation stages (currently only Execution has them) |
+| OLS-3579 | Run detail page: stop-execution button (per-run emergency stop). Remaining unshipped item of OLS-3579 — the per-run stop mechanism does not yet exist on the CRD ([OLS-3298] backend contract pending). Other OLS-3579 items (legal disclaimers, execution record, download plan, approval buttons, confidence tag removal) have shipped. |
+| OLS-3661 | Analysis token count badge on the root cause analysis card. No per-analysis token field exists on the CRD yet. |
+| — | Audit & logs page (`/lightspeed/audit` route and "Audit & logs" subnav). Behavioral spec not yet defined. |
 | — | Auto-generate CRD types from OpenAPI schema (noted as TODO in `src/models/agenticrun.ts`) |
