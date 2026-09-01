@@ -3,17 +3,19 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { AgenticOLSConfig } from '../models/agenticrun';
 import AgenticLayout from './AgenticLayout';
-import { renderWithProviders, screen } from '../test-render';
+import { renderWithProviders, screen, watchResult } from '../test-render';
 
 const watch = vi.mocked(useK8sWatchResource);
 
 const config = (suspended: boolean): AgenticOLSConfig => ({
+  apiVersion: 'agentic.openshift.io/v1alpha1',
+  kind: 'AgenticOLSConfig',
   metadata: { name: 'cluster' },
   spec: { suspended },
 });
 
 beforeEach(() => {
-  watch.mockReturnValue([undefined, false, undefined]);
+  watch.mockReturnValue(watchResult<AgenticOLSConfig>(undefined, false));
 });
 
 afterEach(() => {
@@ -31,7 +33,7 @@ describe('AgenticLayout', () => {
   });
 
   test('shows the disabled warning when the config is suspended', () => {
-    watch.mockReturnValue([config(true), true, undefined]);
+    watch.mockReturnValue(watchResult(config(true), true));
     renderWithProviders(
       <AgenticLayout>
         <div>Run details</div>
@@ -42,7 +44,7 @@ describe('AgenticLayout', () => {
   });
 
   test('hides the warning when the config is not suspended', () => {
-    watch.mockReturnValue([config(false), true, undefined]);
+    watch.mockReturnValue(watchResult(config(false), true));
     renderWithProviders(
       <AgenticLayout>
         <div>Run details</div>
@@ -52,7 +54,7 @@ describe('AgenticLayout', () => {
   });
 
   test('hides the warning while the config is still loading', () => {
-    watch.mockReturnValue([config(true), false, undefined]);
+    watch.mockReturnValue(watchResult(config(true), false));
     renderWithProviders(
       <AgenticLayout>
         <div>Run details</div>
