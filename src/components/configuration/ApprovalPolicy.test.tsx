@@ -1,15 +1,24 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { k8sCreate, k8sPatch, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
-import { ApprovalPolicyK8s } from '../../models/agenticrun';
+import { ApprovalPolicyK8s, ApprovalPolicyStage } from '../../models/agenticrun';
 import ApprovalPolicy from './ApprovalPolicy';
-import { fireEvent, renderWithProviders, screen, waitFor, within } from '../../test-render';
+import {
+  fireEvent,
+  renderWithProviders,
+  screen,
+  waitFor,
+  watchResult,
+  within,
+} from '../../test-render';
 
 const watch = vi.mocked(useK8sWatchResource);
 const patch = vi.mocked(k8sPatch);
 const create = vi.mocked(k8sCreate);
 
-const policy = (stages: { name: string; approval: string }[]): ApprovalPolicyK8s => ({
+const policy = (stages: ApprovalPolicyStage[]): ApprovalPolicyK8s => ({
+  apiVersion: 'agentic.openshift.io/v1alpha1',
+  kind: 'ApprovalPolicy',
   metadata: { name: 'cluster', resourceVersion: '1' },
   spec: { stages },
 });
@@ -17,9 +26,9 @@ const policy = (stages: { name: string; approval: string }[]): ApprovalPolicyK8s
 const stageRow = (stage: string) => within(screen.getByTestId(`config-approval-row-${stage}`));
 
 beforeEach(() => {
-  patch.mockResolvedValue(undefined);
-  create.mockResolvedValue(undefined);
-  watch.mockReturnValue([undefined, true, undefined]);
+  patch.mockResolvedValue({});
+  create.mockResolvedValue({});
+  watch.mockReturnValue(watchResult<ApprovalPolicyK8s>(undefined, true));
 });
 
 afterEach(() => {
@@ -36,7 +45,7 @@ const confirmExecutionModal = () => {
 
 describe('ApprovalPolicy', () => {
   test('shows a spinner while the policy is loading', () => {
-    watch.mockReturnValue([undefined, false, undefined]);
+    watch.mockReturnValue(watchResult<ApprovalPolicyK8s>(undefined, false));
     renderWithProviders(<ApprovalPolicy />);
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
@@ -54,7 +63,7 @@ describe('ApprovalPolicy', () => {
   });
 
   test('syncs stage selections from an existing policy', () => {
-    watch.mockReturnValue([policy([{ approval: 'Automatic', name: 'Analysis' }]), true, undefined]);
+    watch.mockReturnValue(watchResult(policy([{ approval: 'Automatic', name: 'Analysis' }]), true));
     renderWithProviders(<ApprovalPolicy />);
     expect(stageRow('Analysis').getByRole('button', { name: 'Automatic' })).toHaveAttribute(
       'aria-pressed',
@@ -100,7 +109,7 @@ describe('ApprovalPolicy', () => {
   });
 
   test('patches an existing policy on save', async () => {
-    watch.mockReturnValue([policy([{ approval: 'Manual', name: 'Analysis' }]), true, undefined]);
+    watch.mockReturnValue(watchResult(policy([{ approval: 'Manual', name: 'Analysis' }]), true));
     renderWithProviders(<ApprovalPolicy />);
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() =>

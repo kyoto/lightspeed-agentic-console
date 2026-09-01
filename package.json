@@ -22,6 +22,7 @@
     "test-watch": "vitest",
     "test-e2e": "npx playwright test",
     "test-e2e-headless": "npx playwright test --reporter=list",
+    "type-check": "tsc --noEmit",
     "webpack": "node -r ts-node/register ./node_modules/.bin/webpack"
   },
   "dependencies": {
@@ -53,9 +54,11 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
+    "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "15.0.7",
     "@types/node": "22.20.1",
+    "@types/react-dom": "18.3.7",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.6",

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
+import { ApprovalPolicyK8s } from '../../models/agenticrun';
 import ConfigurationPage from './ConfigurationPage';
-import { fireEvent, renderWithProviders, screen } from '../../test-render';
+import { fireEvent, renderWithProviders, screen, watchResult } from '../../test-render';
 
 const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }));
 
@@ -14,7 +15,7 @@ vi.mock('react-router', async (importActual) => ({
 const watch = vi.mocked(useK8sWatchResource);
 
 beforeEach(() => {
-  watch.mockReturnValue([undefined, true, undefined]);
+  watch.mockReturnValue(watchResult<ApprovalPolicyK8s>(undefined, true));
 });
 
 afterEach(() => {
