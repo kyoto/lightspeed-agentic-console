@@ -35,6 +35,7 @@
       "matchPackageNames": [
         "@types/node",
         "@types/react",
+        "@types/react-dom",
         "@patternfly/*",
         "eslint",
         "node",
