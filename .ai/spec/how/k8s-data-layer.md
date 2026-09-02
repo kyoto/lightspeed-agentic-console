@@ -8,12 +8,14 @@
 | `src/models/agenticrun.ts` | `LightspeedAgenticRun`, `LightspeedAgenticRunApproval`, `*ResultCR` types | TypeScript types for each CRD |
 | `src/models/agenticrun.ts` | `AgenticRunK8s`, `AgenticRunApprovalK8s`, `AnalysisResultK8s`, `ExecutionResultK8s`, `VerificationResultK8s`, `EscalationResultK8s` | K8s intersection types (`CRDType & K8sResourceCommon`) for `useK8sWatchResource` generics |
 | `src/models/agenticrun-views.ts` | `AgenticRunView`, `RemediationOptionView`, `ExecutionView`, `VerificationView`, `EscalationView` | View-model types — output of the API→view mapping layer |
-| `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapToAgenticRunView` | Fetches all run-related CRs and maps to a single `AgenticRunView` |
+| `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapToAgenticRunView` | Fetches all run-related CRs, evaluates approval/stop access, and maps to a single `AgenticRunView` |
 | `src/utils/approval.ts` | `buildApprovalPatch` | Generates JSON Patch arrays for `AgenticRunApproval` mutations |
 
 ## Data Flow
 
 ### AgenticRun Watching
+
+[PLANNED: OLS-3298] The watched AgenticRun type includes optional `spec.cancelled`. The detail view derives cancellation presentation from the failing condition's `reason: CancelledByUser` and retains sandbox status references while cleanup is pending.
 
 ```
 useK8sWatchResource(LightspeedAgenticRunGVK, {name, namespace})
@@ -79,6 +81,8 @@ Approval logic is embedded in the `useAgenticRun` hook — a single hook instanc
 - Write: `approveStage(stageType)` / `denyExecution()` → `k8sPatch` with patches from `buildApprovalPatch`
 - State helpers: `stageNeedsApproval()` and `getStageStatus()` from `src/utils/approval.ts` are used internally
 
+[PLANNED: OLS-3298] Stop access is evaluated separately: `canStop` / loading state comes from `useAccessReview` for verb `patch`, resource `agenticruns`, and API group `agentic.openshift.io`, scoped to `run.metadata.namespace` (falling back to the run-watch namespace before the run loads). The Stop action targets that same namespaced AgenticRun and sends JSON Patch `add /spec/cancelled` with value `true`; this changes no other field and succeeds whether `cancelled` is absent or already present (`spec` remains required).
+
 There is no per-tab instantiation — the detail page uses a single-page sectioned layout.
 
 ## Integration Points
@@ -87,6 +91,7 @@ There is no per-tab instantiation — the detail page uses a single-page section
 |---|---|---|
 | All components | Kubernetes API | Console SDK `useK8sWatchResource` (WebSocket) |
 | Approval actions | Kubernetes API | Console SDK `k8sPatch` (HTTP PATCH) |
+| Per-run stop action | Kubernetes API | Console SDK `useAccessReview` for namespaced `patch agenticruns` in `agentic.openshift.io`, then `k8sPatch` JSON Patch `add` at `/spec/cancelled` with value `true` on that same resource |
 | Configuration CRUD | Kubernetes API | Console SDK `k8sCreate`/`k8sPatch`/`k8sDelete` |
 | Log streaming | Kubernetes API | `consoleFetch` with ReadableStream |
 
