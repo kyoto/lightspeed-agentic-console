@@ -1,4 +1,4 @@
-# AI Agent Instructions for OpenShift Console Plugin Template
+# AI Agent Instructions for the Lightspeed Agentic Console Plugin
 
 This document provides context and guidelines for AI coding assistants working on this codebase.
 
@@ -8,19 +8,16 @@ All specifications live in `.ai/spec/`. Start with `.ai/spec/README.md` for proj
 
 ## Project Overview
 
-This is a **template repository** for creating OpenShift Console dynamic plugins. It's meant to be used via GitHub's "Use this template" feature, NOT forked. The template provides a minimal starting point for extending the OpenShift Console UI with custom pages and functionality.
+This is the **OpenShift Lightspeed Agentic Console Plugin** — an OpenShift Console dynamic plugin for managing AI-driven cluster operation runs. Users view, approve/deny, and monitor runs through a multi-stage workflow (Analysis, Execution, Verification, Escalation) and configure approval policies.
 
-> **⚠️ WARNING:**
-> This repository is used by multiple large-scale enterprise web applications. Please proceed with caution when making any changes to this codebase. Changes here can affect downstream projects that depend on this template.
->
-> **Only make changes that should be standard practice for ALL plugins created from this template.** If a change is specific to one plugin use case, it belongs in the instantiated plugin repository, not in this template.
+Scope is the React frontend only: it renders run state (from `AgenticRun` custom resources) and sends approval/denial patches. Out of scope: the lightspeed-agentic-operator (reconciles runs), the agentic-sandbox (executes agent workloads), CRD definitions, and backend API logic.
 
 **Key Technologies:**
 - TypeScript + React 18
 - PatternFly 6 (UI component library)
 - Webpack 5 with Module Federation
 - react-i18next for internationalization
-- Playwright for e2e testing
+- Vitest for unit tests, Playwright for e2e testing
 
 **Compatibility:** Requires OpenShift 4.22+
 
@@ -36,13 +33,6 @@ This plugin uses webpack module federation to load at runtime into the OpenShift
 
 **Critical:** Any component referenced in `console-extensions.json` must have a corresponding entry in `package.json` under `consolePlugin.exposedModules`.
 
-### Component Structure
-
-- Use functional components with hooks (NO class components)
-- All components should be TypeScript (`.tsx`)
-- Follow PatternFly component patterns
-- Use PatternFly CSS variables instead of hex colors (dark mode compatibility)
-
 ### Styling Constraints
 
 **IMPORTANT:** The `.stylelintrc.yaml` enforces strict rules to prevent breaking console:
@@ -50,23 +40,23 @@ This plugin uses webpack module federation to load at runtime into the OpenShift
 - **NO hex colors** - use PatternFly CSS variables (e.g., `var(--pf-v6-global-palette--blue-500)`)
 - **NO naked element selectors** (like `table`, `div`) - prevents overwriting console styles
 - **NO `.pf-` or `.co-` prefixed classes** - these are reserved for PatternFly and console
-- **Prefix all custom classes** with plugin name (e.g., `console-plugin-template__nice`)
+- **Prefix all custom classes** with `ols-plugin__` (e.g., `ols-plugin__run-timeline`)
 
 Don't disable these rules without understanding they protect against layout breakage!
 
 ## Internationalization (i18n)
 
-**Namespace Convention:** `plugin__<plugin-name>` (e.g., `plugin__console-plugin-template`)
+**Namespace:** `plugin__lightspeed-agentic-console-plugin`
 
 ### In React Components:
 ```tsx
-const { t } = useTranslation('plugin__console-plugin-template');
-return <h1>{t('Hello, World!')}</h1>;
+const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+return <h1>{t('Agentic runs')}</h1>;
 ```
 
 ### In console-extensions.json:
 ```json
-"name": "%plugin__console-plugin-template~My Label%"
+"name": "%plugin__lightspeed-agentic-console-plugin~My Label%"
 ```
 
 **After adding/changing messages:** Run `npm run i18n` to update locale files in `/locales`
@@ -75,12 +65,13 @@ return <h1>{t('Hello, World!')}</h1>;
 
 ```
 src/
-  components/          # React components
-    ExamplePage.tsx   # Example page component
-    *.css            # Component styles (scoped with plugin prefix)
+  components/          # React components (configuration/, runs/, shared)
+  hooks/              # Custom hooks
+  models/             # AgenticRun model and view helpers
+  utils/              # Approval, RBAC, and markdown utilities
 console-extensions.json # Plugin extension declarations
 package.json           # Plugin metadata in consolePlugin section
-tsconfig.json          # TypeScript config (strict: false currently)
+tsconfig.json          # TypeScript config
 webpack.config.ts      # Module federation + build config
 locales/               # i18n translation files
 integration-tests/     # Playwright e2e tests
@@ -92,11 +83,12 @@ integration-tests/     # Playwright e2e tests
 1. `npm install` - install dependencies
 2. `npm start` - starts webpack dev server on port 9001 with CORS
 3. `npm run start-console` - runs OpenShift console in container (requires cluster login)
-4. Navigate to http://localhost:9000/example
+4. Navigate to http://localhost:9000/lightspeed/runs
 
 ### Code Quality
 - `npm run lint` - checks eslint and stylelint (no auto-fix)
 - `npm run lint-fix` - checks and auto-fixes eslint and stylelint issues
+- `npm run type-check` - runs `tsc --noEmit`
 - Linting is mandatory before commits
 - Follow existing code patterns in the repo
 
@@ -104,16 +96,15 @@ integration-tests/     # Playwright e2e tests
 - `npm run test-unit` - runs unit tests (vitest)
 - `npm run test-e2e` - runs Playwright tests
 - `npm run test-e2e-headless` - runs Playwright tests with list reporter
-- Add e2e tests for new pages/features
+- Add tests for new pages/features
 
 ## TypeScript Configuration
 
-Current config has `strict: false` but enforces:
+Config enforces:
+- `strict: true`
 - `noUnusedLocals: true`
-- All files should use `.tsx` extension
-- Target: ES2020
-
-**Modernization opportunity:** When touching files, consider enabling stricter TypeScript checks.
+- Use `.tsx` only for React components; non-React TypeScript (configuration, hooks, models, utilities, tests) uses `.ts`
+- Target: ES2021
 
 ## Common Development Tasks
 
@@ -125,7 +116,7 @@ Current config has `strict: false` but enforces:
    {
      "type": "console.page/route",
      "properties": {
-       "path": "/my-page",
+       "path": "/lightspeed/my-page",
        "component": { "$codeRef": "MyPage" }
      }
    }
@@ -139,39 +130,30 @@ Current config has `strict: false` but enforces:
   "type": "console.navigation/href",
   "properties": {
     "id": "my-nav-item",
-    "name": "%plugin__console-plugin-template~My Page%",
-    "href": "/my-page",
+    "name": "%plugin__lightspeed-agentic-console-plugin~My Page%",
+    "href": "/lightspeed/my-page",
     "perspective": "admin",
-    "section": "home"
+    "section": "lightspeed-agentic-runs"
   }
 }
 ```
 
-### Updating Plugin Name
-When instantiating from template, update:
-1. `package.json` - `name` and `consolePlugin.name`
-2. `package.json` - `consolePlugin.displayName` and `description`
-3. All i18n namespace references (`plugin__<name>`)
-4. CSS class prefixes
-
 ## Build & Deployment
 
-### Building Image
+The release image is built in CI (Konflux) from the repo `Dockerfile`, which does a
+production `npm run build` and serves the static `dist/` output via nginx. To build it
+locally from the same `Dockerfile`:
+
 ```bash
-docker build -t quay.io/my-repository/my-plugin:latest .
+docker build -f Dockerfile -t lightspeed-agentic-console:dev .
 # For Apple Silicon: add --platform=linux/amd64
 ```
 
 ## Important Constraints & Gotchas
 
-1. **Template, not fork:** Users should use "Use this template", not fork
-2. **i18n namespace must match ConsolePlugin resource name** with `plugin__` prefix
-3. **CSS class prefixes prevent style conflicts** - always prefix with plugin name
-4. **Module federation requires exact module mapping** - `exposedModules` must match `$codeRef` values
-5. **PatternFly CSS variables only** - hex colors break dark mode
-6. **No webpack HMR for extensions** - changes to `console-extensions.json` require restart
-7. **TypeScript not in strict mode** - legacy choice, can be modernized
-8. **React 18** - matches console's React version
+1. **Module federation requires exact module mapping** - `exposedModules` must match `$codeRef` values
+2. **No webpack HMR for extensions** - changes to `console-extensions.json` require restart
+3. **React 18** - matches console's React version
 
 ## Extension Points
 
@@ -199,8 +181,9 @@ See [Console Plugin SDK README](https://github.com/openshift/console/tree/master
 
 ## Testing Strategy
 
+- **Unit tests (Vitest):** Co-located `*.test.ts` files for utility and model logic
+- **Component tests (Vitest + Testing Library):** Co-located `*.test.tsx` files for component behavior
 - **E2E tests (Playwright):** For user flows and page rendering
-- **Component tests:** Add when components have complex logic
 - **Test data attributes:** Use `data-test` attributes for selectors
 - Run tests locally before opening PRs
 
@@ -209,17 +192,6 @@ See [Console Plugin SDK README](https://github.com/openshift/console/tree/master
 - [Console Plugin SDK](https://github.com/openshift/console/tree/master/frontend/packages/console-dynamic-plugin-sdk)
 - [PatternFly React](https://www.patternfly.org/get-started/develop)
 - [Dynamic Plugin Enhancement Proposal](https://github.com/openshift/enhancements/blob/master/enhancements/console/dynamic-plugins.md)
-
-## Quick Decision Guide
-
-**When should I...**
-
-- **Use this template?** When creating a NEW OpenShift Console plugin from scratch
-- **Add a page?** Update console-extensions.json + exposedModules + create component
-- **Style something?** Use PatternFly components and CSS variables, prefix custom classes
-- **Add translations?** Use `t()` function, run `npm run i18n` after
-- **Test changes?** Run locally with `npm start` + `npm run start-console`, add Playwright tests
-- **Deploy?** Build image, push to registry, deploy to cluster
 
 ## Git and PR Workflow
 
