@@ -398,13 +398,14 @@ export type VerificationStepStatus = {
 };
 
 export type TokenUsage = {
-  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
 };
 
 export type AgenticRunStatus = {
   conditions?: AgenticRunCondition[];
   steps?: StepsStatus;
-  usage?: TokenUsage;
+  tokenUsage?: TokenUsage;
 };
 
 export type EscalationStepStatus = {

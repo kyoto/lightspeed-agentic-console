@@ -152,7 +152,7 @@
   "This is an advisory-only run. Review the recommendations below and apply changes externally.": "This is an advisory-only run. Review the recommendations below and apply changes externally.",
   "This stage requires manual approval before it can proceed.": "This stage requires manual approval before it can proceed.",
   "Timeline": "Timeline",
-  "Tokens consumed": "Tokens consumed",
+  "Tokens (in / out)": "Tokens (in / out)",
   "Trigger domain": "Trigger domain",
   "Unable to load {{label}}": "Unable to load {{label}}",
   "Unable to load run results.": "Unable to load run results.",
