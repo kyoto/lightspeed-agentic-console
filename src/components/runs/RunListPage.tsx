@@ -42,6 +42,7 @@ import {
   LightspeedAgenticRunModel,
 } from '../../models/agenticrun';
 import { RUN_LABEL_SOURCE } from '../../constants';
+import { compareTokenUsage, formatTokenCell } from '../../utils/token-utils';
 import AgenticLayout from '../AgenticLayout';
 import { ConfirmationModal } from '../ConfirmationModal';
 import PreviewBadge from '../PreviewBadge';
@@ -185,7 +186,11 @@ const RunListPage: React.FC = () => {
           }),
         title: t('Status'),
       },
-      { id: 'tokens', sort: 'status.usage.totalTokens', title: t('Tokens consumed') },
+      {
+        id: 'tokens',
+        sort: (data, direction) => compareTokenUsage(data, direction),
+        title: t('Tokens (in / out)'),
+      },
       { id: 'age', sort: 'metadata.creationTimestamp', title: t('Created') },
       { id: '', props: { className: 'pf-v6-c-table__action' }, title: '' },
     ],
@@ -216,7 +221,7 @@ const RunListPage: React.FC = () => {
             <RunPhaseLabel phase={phase} />
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="tokens">
-            {obj.status?.usage?.totalTokens?.toLocaleString() ?? '-'}
+            {formatTokenCell(obj)}
           </TableData>
           <TableData activeColumnIDs={activeColumnIDs} id="age">
             <Timestamp timestamp={obj.metadata.creationTimestamp} />
