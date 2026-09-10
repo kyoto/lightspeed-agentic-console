@@ -38,6 +38,7 @@
         "@types/react-dom",
         "@patternfly/*",
         "eslint",
+        "js-yaml",
         "node",
         "vitest"
       ],
