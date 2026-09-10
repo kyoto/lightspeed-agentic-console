@@ -42,6 +42,15 @@ describe('RequiredPermissions', () => {
     expect(screen.queryByText(/cluster-wide permission/)).not.toBeInTheDocument();
   });
 
+  test('renders the scoped-privileges callout', () => {
+    render({ namespaceScoped: [nsRule] });
+    expect(
+      screen.getByText(
+        'Permissions are fixed upon approval. The agent cannot exceed these scoped privileges.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   test('renders a cluster-wide permission count and row label', () => {
     render({ clusterScoped: [clusterRule] });
     expect(screen.getByText('1 cluster-wide permission')).toBeInTheDocument();

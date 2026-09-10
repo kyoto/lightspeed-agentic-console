@@ -57,11 +57,12 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('RunDetailPage remediation hub failure rendering', () => {
+describe('RunDetailPage remediation plans failure rendering', () => {
   test('renders the failure card when a Failed run has no remediation options', () => {
     mockHook(makeView({ failureReason: 'Analysis pod exceeded memory limit', options: [] }));
     renderWithProviders(<RunDetailPage />);
 
+    expect(screen.getByText('Remediation plans')).toBeInTheDocument();
     expect(screen.getByText('Analysis pod exceeded memory limit')).toBeInTheDocument();
     expect(screen.queryByText('Restart the pod')).not.toBeInTheDocument();
   });

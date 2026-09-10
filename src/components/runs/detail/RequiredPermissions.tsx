@@ -89,7 +89,7 @@ export const RequiredPermissions: FC<RequiredPermissionsProps> = ({ rbac }) => {
             isInline
             isPlain
             title={t(
-              'Permissions are locked at approval. The agent cannot escalate its privileges beyond these rules.',
+              'Permissions are fixed upon approval. The agent cannot exceed these scoped privileges.',
             )}
             variant="warning"
           />
@@ -113,15 +113,15 @@ export const RequiredPermissions: FC<RequiredPermissionsProps> = ({ rbac }) => {
                 </Label>
               </FlexItem>
             )}
-            {writeSummary && (
-              <FlexItem>
-                <Content component={ContentVariants.small}>
-                  {`${t('Includes write')}: ${writeSummary}`}
-                </Content>
-              </FlexItem>
-            )}
           </Flex>
         </FlexItem>
+        {writeSummary && (
+          <FlexItem>
+            <Content component={ContentVariants.small}>
+              {`${t('Includes write')}: ${writeSummary}`}
+            </Content>
+          </FlexItem>
+        )}
         <FlexItem>
           <ExpandableSection
             isExpanded={isExpanded}

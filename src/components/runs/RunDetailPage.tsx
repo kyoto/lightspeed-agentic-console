@@ -515,7 +515,7 @@ const RunDetailPage: FC = () => {
             >
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 <FlexItem>
-                  <Title headingLevel="h4">{t('Remediation hub')}</Title>
+                  <Title headingLevel="h4">{t('Remediation plans')}</Title>
                 </FlexItem>
                 <FlexItem>
                   <Label isCompact>{t('AI-generated')}</Label>

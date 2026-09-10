@@ -112,7 +112,7 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 <FlexItem>
-                  <CardTitle>
+                  <CardTitle className="ols-plugin__remediation-option-title">
                     <strong>
                       {readOnly
                         ? t('Selected option')
