@@ -82,21 +82,28 @@ const RunDetailPage: FC = () => {
   } = useAgenticRun(name, namespace);
 
   const phaseKey = view?.phase ?? 'unknown';
-  const [selectedOption, setSelectedOption] = useState(0);
-  const [expandedOption, setExpandedOption] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(-1);
+  const [expandedOptions, setExpandedOptions] = useState<Set<number>>(new Set());
 
   const executedOptionIndex = view?.executedOptionIndex;
   useEffect(() => {
-    const idx = executedOptionIndex ?? 0;
+    const idx = executedOptionIndex ?? -1;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedOption(idx);
 
-    setExpandedOption(idx);
+    setExpandedOptions(idx >= 0 ? new Set([idx]) : new Set());
   }, [phaseKey, executedOptionIndex]);
 
-  const selectOption = useCallback((idx: number) => {
-    setSelectedOption(idx);
-    setExpandedOption((prev) => (prev === idx ? -1 : idx));
+  const toggleExpand = useCallback((idx: number) => {
+    setExpandedOptions((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+        return next;
+      }
+      next.add(idx);
+      return next;
+    });
   }, []);
 
   const [executeOptionIndex, setExecuteOptionIndex] = useState<number | null>(null);
@@ -166,13 +173,14 @@ const RunDetailPage: FC = () => {
                   <RemediationOptionCard
                     canApprove={canApprove}
                     canApproveLoading={canApproveLoading}
-                    isExpanded={expandedOption === option.index}
+                    isExpanded={expandedOptions.has(option.index)}
+                    isRecommended={option.index === 0}
                     isSelected={selectedOption === option.index}
                     key={option.index}
                     mutationInProgress={mutationInProgress}
                     onExecute={v.advisory ? undefined : openExecuteModal}
-                    onSelect={() => selectOption(option.index)}
-                    onToggleExpand={() => selectOption(option.index)}
+                    onSelect={() => setSelectedOption(option.index)}
+                    onToggleExpand={() => toggleExpand(option.index)}
                     option={option}
                   />
                 ))}
@@ -332,10 +340,10 @@ const RunDetailPage: FC = () => {
       if (executedOption) {
         return (
           <RemediationOptionCard
-            isExpanded={expandedOption === executedOption.index}
+            isExpanded={expandedOptions.has(executedOption.index)}
             isSelected
-            onSelect={() => selectOption(executedOption.index)}
-            onToggleExpand={() => selectOption(executedOption.index)}
+            onSelect={() => setSelectedOption(executedOption.index)}
+            onToggleExpand={() => toggleExpand(executedOption.index)}
             option={executedOption}
             readOnly
             showSpinner={opts.showSpinner}
@@ -345,11 +353,11 @@ const RunDetailPage: FC = () => {
     }
     return view.options.map((option) => (
       <RemediationOptionCard
-        isExpanded={expandedOption === option.index}
+        isExpanded={expandedOptions.has(option.index)}
         isSelected={selectedOption === option.index}
         key={option.index}
-        onSelect={() => selectOption(option.index)}
-        onToggleExpand={() => selectOption(option.index)}
+        onSelect={() => setSelectedOption(option.index)}
+        onToggleExpand={() => toggleExpand(option.index)}
         option={option}
         readOnly
         showSpinner={opts.showSpinner && selectedOption === option.index}

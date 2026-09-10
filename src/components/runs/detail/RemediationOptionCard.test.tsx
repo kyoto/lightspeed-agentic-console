@@ -54,11 +54,21 @@ afterEach(() => {
 });
 
 describe('RemediationOptionCard', () => {
-  test('renders the option number, title, and reversibility when collapsed', () => {
+  test('renders the plan selection radio, title, and reversibility when collapsed', () => {
     renderCard();
-    expect(screen.getByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Select plan 1')).toBeInTheDocument();
     expect(screen.getByText('Restart the pod')).toBeInTheDocument();
     expect(screen.getByText('Reversible')).toBeInTheDocument();
+  });
+
+  test('renders the "AI recommended" badge when isRecommended is set', () => {
+    renderCard({ isRecommended: true });
+    expect(screen.getByText('AI recommended')).toBeInTheDocument();
+  });
+
+  test('does not render the "AI recommended" badge by default', () => {
+    renderCard();
+    expect(screen.queryByText('AI recommended')).not.toBeInTheDocument();
   });
 
   test('hides the body while collapsed', () => {
@@ -100,16 +110,39 @@ describe('RemediationOptionCard', () => {
     expect(onToggleExpand).toHaveBeenCalledTimes(2);
   });
 
-  test('calls onSelect when the selectable control is activated in non-read-only mode', () => {
-    const { onSelect } = renderCard();
+  test('calls onSelect without expanding when the plan radio is activated', () => {
+    const { onSelect, onToggleExpand } = renderCard();
     fireEvent.click(screen.getByRole('radio'));
     expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
-  test('calls onExecute when the execute button is clicked', () => {
-    const { onExecute } = renderCard({ canApprove: true, isExpanded: true });
+  test('calls onSelect when the reversibility label in the selection row is clicked', () => {
+    const { onSelect, onToggleExpand } = renderCard();
+    fireEvent.click(screen.getByText('Reversible'));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  test('expands via "View plan details" without selecting the plan', () => {
+    const { onSelect, onToggleExpand } = renderCard();
+    fireEvent.click(screen.getByText('View plan details'));
+    expect(onToggleExpand).toHaveBeenCalledTimes(1);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  test('calls onExecute when the execute button is clicked and the plan is selected', () => {
+    const { onExecute } = renderCard({ canApprove: true, isExpanded: true, isSelected: true });
     fireEvent.click(screen.getByText('Execute remediation').closest('button') as HTMLButtonElement);
     expect(onExecute).toHaveBeenCalledTimes(1);
+  });
+
+  test('disables the execute button until the plan is selected', () => {
+    const { onExecute } = renderCard({ canApprove: true, isExpanded: true, isSelected: false });
+    const button = screen.getByText('Execute remediation').closest('button') as HTMLButtonElement;
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(button);
+    expect(onExecute).not.toHaveBeenCalled();
   });
 
   test('does not render the execute button when onExecute is not provided', () => {
@@ -118,7 +151,7 @@ describe('RemediationOptionCard', () => {
   });
 
   test('renders a spinner in the header instead of the expand caret when showSpinner is set', () => {
-    renderCard({ showSpinner: true });
+    renderCard({ readOnly: true, showSpinner: true });
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
