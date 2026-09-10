@@ -6,6 +6,11 @@
   text-transform: uppercase;
 }
 
+.ols-plugin__remediation-option-title {
+  font-size: var(--pf-t--global--font--size--body--sm);
+  margin-block: 0;
+}
+
 .ols-plugin__rbac-namespace-link a {
   text-decoration: underline dashed;
   text-underline-offset: var(--pf-t--global--spacer--xs);
