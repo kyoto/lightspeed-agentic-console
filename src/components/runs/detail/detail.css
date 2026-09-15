@@ -13,7 +13,8 @@
 }
 
 .ols-plugin__remediation-card-header--title {
-  text-transform: uppercase;
+  font-size: var(--pf-t--global--font--size--body--sm);
+  color: var(--pf-t--global--text--color--subtle);
 }
 
 .ols-plugin__remediation-option-title {
