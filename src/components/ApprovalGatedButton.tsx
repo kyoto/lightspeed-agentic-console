@@ -10,6 +10,8 @@ interface ApprovalGatedButtonProps {
   onClick: () => void;
   variant?: ButtonProps['variant'];
   isDanger?: boolean;
+  isDisabled?: boolean;
+  disabledTooltip?: ReactNode;
   children: ReactNode;
 }
 
@@ -20,16 +22,23 @@ export const ApprovalGatedButton: FC<ApprovalGatedButtonProps> = ({
   onClick,
   variant = 'primary',
   isDanger,
+  isDisabled,
+  disabledTooltip,
   children,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
+  const permissionBlocked = !canApprove && !canApproveLoading && !mutationInProgress;
+  const selectionBlocked =
+    !permissionBlocked && !!isDisabled && !!disabledTooltip && !mutationInProgress;
   return (
     <Tooltip
-      content={t("You don't have permission to approve or deny runs.")}
-      trigger={!canApprove && !canApproveLoading && !mutationInProgress ? undefined : 'manual'}
+      content={
+        selectionBlocked ? disabledTooltip : t("You don't have permission to approve or deny runs.")
+      }
+      trigger={permissionBlocked || selectionBlocked ? undefined : 'manual'}
     >
       <Button
-        isAriaDisabled={!canApprove || mutationInProgress}
+        isAriaDisabled={!canApprove || mutationInProgress || !!isDisabled}
         isDanger={isDanger}
         isLoading={canApproveLoading || mutationInProgress}
         onClick={onClick}

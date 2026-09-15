@@ -2,6 +2,16 @@
   cursor: pointer;
 }
 
+.ols-plugin__remediation-select-row {
+  cursor: pointer;
+  display: block;
+}
+
+.ols-plugin__remediation-card--selected {
+  --pf-v6-c-card--BorderColor: var(--pf-t--global--border--color--clicked);
+  --pf-v6-c-card--BorderWidth: var(--pf-t--global--border--width--box--clicked);
+}
+
 .ols-plugin__remediation-card-header--title {
   text-transform: uppercase;
 }

@@ -13,6 +13,7 @@ import {
   Flex,
   FlexItem,
   Label,
+  Radio,
   Spinner,
   Title,
 } from '@patternfly/react-core';
@@ -32,6 +33,7 @@ import './detail.css';
 interface RemediationOptionCardProps {
   option: RemediationOptionView;
   isExpanded: boolean;
+  isRecommended?: boolean;
   isSelected: boolean;
   onSelect: () => void;
   onToggleExpand: () => void;
@@ -46,6 +48,7 @@ interface RemediationOptionCardProps {
 export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
   option,
   isExpanded,
+  isRecommended = false,
   isSelected,
   onSelect,
   onToggleExpand,
@@ -73,65 +76,105 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
   );
 
   return (
-    <Card isSelectable={!readOnly} isSelected={isSelected}>
-      <CardHeader
-        className="ols-plugin__remediation-card-header--clickable"
-        onClick={() => {
-          if (readOnly) onToggleExpand();
-        }}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (readOnly && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            onToggleExpand();
-          }
-        }}
-        role={readOnly ? 'button' : undefined}
-        selectableActions={
-          readOnly
-            ? undefined
-            : {
-                selectableActionId: `option-${option.index}`,
-                selectableActionAriaLabel: t('Option {{number}}', { number: option.index + 1 }),
-                name: 'remediation-option',
-                variant: 'single',
-                isHidden: true,
-                onChange: () => onSelect(),
-              }
-        }
-        tabIndex={readOnly ? 0 : undefined}
-      >
-        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-          {showSpinner ? (
-            <FlexItem align={{ default: 'alignLeft' }}>
-              <Spinner size="md" />
-            </FlexItem>
-          ) : (
-            <FlexItem>{isExpanded ? <AngleUpIcon /> : <AngleDownIcon />}</FlexItem>
-          )}
-          <Flex direction={{ default: 'column' }}>
-            <FlexItem>
-              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                <FlexItem>
-                  <CardTitle className="ols-plugin__remediation-option-title">
-                    <strong>
-                      {readOnly
-                        ? t('Selected option')
-                        : t('Option {{number}}', { number: option.index + 1 })}
-                    </strong>
-                  </CardTitle>
-                </FlexItem>
-                {option.reversibility && (
+    <Card
+      className={!readOnly && isSelected ? 'ols-plugin__remediation-card--selected' : undefined}
+    >
+      {readOnly ? (
+        <CardHeader
+          className="ols-plugin__remediation-card-header--clickable"
+          onClick={() => onToggleExpand()}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onToggleExpand();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <Flex alignItems={{ default: 'alignItemsCenter' }}>
+            {showSpinner ? (
+              <FlexItem align={{ default: 'alignLeft' }}>
+                <Spinner size="md" />
+              </FlexItem>
+            ) : (
+              <FlexItem>{isExpanded ? <AngleUpIcon /> : <AngleDownIcon />}</FlexItem>
+            )}
+            <Flex direction={{ default: 'column' }}>
+              <FlexItem>
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                   <FlexItem>
-                    <Label
-                      color={getReversibilityColor(option.reversibility)}
-                      isCompact
-                      variant="outline"
-                    >
-                      {getReversibilityText(option.reversibility, t)}
-                    </Label>
+                    <CardTitle className="ols-plugin__remediation-option-title">
+                      <strong>{t('Selected option')}</strong>
+                    </CardTitle>
                   </FlexItem>
-                )}
-              </Flex>
+                  {option.reversibility && (
+                    <FlexItem>
+                      <Label
+                        color={getReversibilityColor(option.reversibility)}
+                        isCompact
+                        variant="outline"
+                      >
+                        {getReversibilityText(option.reversibility, t)}
+                      </Label>
+                    </FlexItem>
+                  )}
+                </Flex>
+              </FlexItem>
+              <FlexItem>
+                <Title headingLevel="h5">
+                  <strong>
+                    <MarkdownContent component="span" inline text={option.title} />
+                  </strong>
+                </Title>
+              </FlexItem>
+            </Flex>
+          </Flex>
+        </CardHeader>
+      ) : (
+        <CardHeader>
+          <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+            <FlexItem>
+              <label
+                className="ols-plugin__remediation-select-row"
+                htmlFor={`select-option-${option.index}`}
+              >
+                <Flex
+                  alignItems={{ default: 'alignItemsCenter' }}
+                  spaceItems={{ default: 'spaceItemsSm' }}
+                >
+                  <FlexItem>
+                    <Radio
+                      aria-label={t('Select plan {{number}}', { number: option.index + 1 })}
+                      id={`select-option-${option.index}`}
+                      isChecked={isSelected}
+                      name="remediation-option"
+                      onChange={() => onSelect()}
+                    />
+                  </FlexItem>
+                  <FlexItem>
+                    <strong>{t('Select plan {{number}}', { number: option.index + 1 })}</strong>
+                  </FlexItem>
+                  {isRecommended && (
+                    <FlexItem>
+                      <Label color="blue" isCompact>
+                        {t('AI recommended')}
+                      </Label>
+                    </FlexItem>
+                  )}
+                  {option.reversibility && (
+                    <FlexItem>
+                      <Label
+                        color={getReversibilityColor(option.reversibility)}
+                        isCompact
+                        variant="outline"
+                      >
+                        {getReversibilityText(option.reversibility, t)}
+                      </Label>
+                    </FlexItem>
+                  )}
+                </Flex>
+              </label>
             </FlexItem>
             <FlexItem>
               <Title headingLevel="h5">
@@ -140,9 +183,20 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                 </strong>
               </Title>
             </FlexItem>
+            <FlexItem>
+              <Button
+                icon={isExpanded ? <AngleUpIcon /> : <AngleDownIcon />}
+                iconPosition="end"
+                isInline
+                onClick={() => onToggleExpand()}
+                variant="link"
+              >
+                {isExpanded ? t('Hide plan details') : t('View plan details')}
+              </Button>
+            </FlexItem>
           </Flex>
-        </Flex>
-      </CardHeader>
+        </CardHeader>
+      )}
       {isExpanded && (
         <CardBody>
           <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -259,6 +313,8 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                         <ApprovalGatedButton
                           canApprove={canApprove}
                           canApproveLoading={canApproveLoading}
+                          disabledTooltip={t('Select a remediation option to execute')}
+                          isDisabled={!isSelected}
                           mutationInProgress={mutationInProgress}
                           onClick={onExecute}
                         >
