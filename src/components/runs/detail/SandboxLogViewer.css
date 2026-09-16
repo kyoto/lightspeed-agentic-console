@@ -1,0 +1,4 @@
+/* stylelint-disable-next-line selector-disallowed-list */
+.ols-plugin__sandbox-log-viewer .pf-v6-c-log-viewer__scroll-container {
+  overscroll-behavior-y: contain;
+}
