@@ -103,7 +103,7 @@ export const ExecutionSummary: FC<ExecutionSummaryProps> = ({ execution }) => {
 
           {execution.originalRootCause && (
             <FlexItem>
-              <Content component={ContentVariants.small}>{t('CONTEXTUAL EVIDENCE')}</Content>
+              <Content component={ContentVariants.small}>{t('Contextual evidence')}</Content>
               <DescriptionList>
                 <DescriptionListGroup>
                   <DescriptionListTerm>{t('Original root cause')}</DescriptionListTerm>

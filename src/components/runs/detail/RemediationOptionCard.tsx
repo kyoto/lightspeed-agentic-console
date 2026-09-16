@@ -20,11 +20,10 @@ import {
 import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
 import type { FC } from 'react';
 import * as React from 'react';
-import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RemediationOptionView } from '../../../models/agenticrun-views';
 import { getReversibilityColor, getReversibilityText } from '../../../utils/agenticrun-utils';
-import { ApprovalGatedButton } from '../../ApprovalGatedButton';
+import { downloadRemediationOption } from '../../../utils/remediation-plan';
 import { CodeBlockWithClipboard } from '../../CodeBlockWithClipboard';
 import { MarkdownContent } from '../../MarkdownContent';
 import { RequiredPermissions } from './RequiredPermissions';
@@ -37,12 +36,8 @@ interface RemediationOptionCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onToggleExpand: () => void;
-  onExecute?: () => void;
-  canApprove?: boolean;
-  canApproveLoading?: boolean;
   readOnly?: boolean;
   showSpinner?: boolean;
-  mutationInProgress?: boolean;
 }
 
 export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
@@ -52,28 +47,10 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
   isSelected,
   onSelect,
   onToggleExpand,
-  onExecute,
-  canApprove = false,
-  canApproveLoading,
   readOnly,
   showSpinner,
-  mutationInProgress,
 }) => {
   const { t } = useTranslation('plugin__lightspeed-agentic-console-plugin');
-
-  const handleDownloadPlan = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      const blob = new Blob([JSON.stringify(option, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `remediation-option-${option.index + 1}.json`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-    },
-    [option],
-  );
 
   return (
     <Card
@@ -306,29 +283,17 @@ export const RemediationOptionCard: FC<RemediationOptionCardProps> = ({
                   </FlexItem>
                 )}
 
-                <FlexItem>
-                  <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    {onExecute && (
-                      <FlexItem>
-                        <ApprovalGatedButton
-                          canApprove={canApprove}
-                          canApproveLoading={canApproveLoading}
-                          disabledTooltip={t('Select a remediation option to execute')}
-                          isDisabled={!isSelected}
-                          mutationInProgress={mutationInProgress}
-                          onClick={onExecute}
-                        >
-                          {t('Execute remediation')}
-                        </ApprovalGatedButton>
-                      </FlexItem>
-                    )}
-                    <FlexItem>
-                      <Button icon={<DownloadIcon />} onClick={handleDownloadPlan} variant="link">
-                        {t('Download plan')}
-                      </Button>
-                    </FlexItem>
-                  </Flex>
-                </FlexItem>
+                {readOnly && (
+                  <FlexItem>
+                    <Button
+                      icon={<DownloadIcon />}
+                      onClick={() => downloadRemediationOption(option)}
+                      variant="link"
+                    >
+                      {t('Download plan')}
+                    </Button>
+                  </FlexItem>
+                )}
               </Flex>
             </FlexItem>
           </Flex>

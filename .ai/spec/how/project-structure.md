@@ -8,11 +8,13 @@
 | `src/utils/approval.ts` | `findStage`, `getStageStatus`, `stageNeedsApproval`, `buildApprovalPatch` | Pure functions for approval logic |
 | `src/utils/markdown.ts` | `renderMarkdown`, `renderMarkdownInline` | Low-level sanitized markdown rendering (marked + DOMPurify). `renderMarkdown` emits block HTML via `marked.parse`; `renderMarkdownInline` emits inline HTML via `marked.parseInline`. All links are hardened with `target="_blank" rel="noopener noreferrer"`. Prefer `MarkdownContent` component over direct calls. |
 | `src/utils/agenticrun-utils.ts` | `buildPodLogUrl`, `getOutcomeStatus`, `getReversibilityColor` | Helpers for pod log URLs, outcome status mapping, reversibility colors |
+| `src/utils/remediation-plan.ts` | `downloadRemediationOption` | Downloads a remediation option as a JSON file via programmatic anchor click |
 | `src/utils/rbac-utils.ts` | `flattenRbacRules`, `resolveKind`, `isWriteVerb`, `hasWriteVerb`, `formatResource`, `summarizeWritePermissions`, `countNamespaceRules`, `countClusterRules`, `ScopedPermissionRule` | Flattens the grouped `namespaceScoped`/`clusterScoped` RBAC wire contract into one ordered rule list and derives write-verb summaries/counts for `RequiredPermissions` |
 | `src/components/runs/RunListPage.tsx` | `RunListPage` | Run list with virtualized table (target-namespaces, trigger-domain, phase, tokens, age, kebab columns), phase + trigger-domain filters, and per-row delete |
-| `src/components/runs/RunDetailPage.tsx` | `RunDetailPage` | Section-based run detail page, delegates to `detail/` subcomponents |
+| `src/components/runs/RunDetailPage.tsx` | `RunDetailPage` | Section-based run detail page with sticky action toolbar, delegates to `detail/` subcomponents |
+| `src/components/runs/RunDetailPage.css` | `.ols-plugin__action-toolbar` | Sticky bottom toolbar styling for triage actions |
 | `src/components/runs/detail/AnalysisSummary.tsx` | `AnalysisSummary` | Analysis request display, analysis loading/streaming state |
-| `src/components/runs/detail/RemediationOptionCard.tsx` | `RemediationOptionCard` | Expandable remediation option card with embedded root cause analysis |
+| `src/components/runs/detail/RemediationOptionCard.tsx` | `RemediationOptionCard` | Expandable remediation option card with radio selection, embedded root cause analysis, and per-card download (readOnly mode) |
 | `src/components/runs/detail/ExecutionSummary.tsx` | `ExecutionSummary` | Post-execution actions and outcome display |
 | `src/components/runs/detail/VerificationSummary.tsx` | `VerificationSummary` | Verification checks and summary |
 | `src/components/runs/detail/EscalationSummary.tsx` | `EscalationSummary` | Freeform escalation summary/content card (returns null when empty) |

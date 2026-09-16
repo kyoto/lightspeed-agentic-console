@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { useAgenticRun } from '../../hooks/useAgenticRun';
 import type { AgenticRunView, RemediationOptionView } from '../../models/agenticrun-views';
 import RunDetailPage from './RunDetailPage';
-import { renderWithProviders, screen } from '../../test-render';
+import { fireEvent, renderWithProviders, screen } from '../../test-render';
 
 vi.mock('../../hooks/useAgenticRun', () => ({
   useAgenticRun: vi.fn(),
@@ -84,5 +84,49 @@ describe('RunDetailPage remediation plans failure rendering', () => {
 
     expect(screen.getByText('Restart the pod')).toBeInTheDocument();
     expect(screen.getByText('Execution')).toBeInTheDocument();
+  });
+});
+
+describe('RunDetailPage proposed-state action toolbar', () => {
+  const proposedView = () =>
+    makeView({
+      options: [makeOption(), makeOption({ index: 1, title: 'Snapshot PVC' })],
+      phase: 'Proposed',
+    });
+
+  test('renders execute, deny, and download actions', () => {
+    mockHook(proposedView());
+    renderWithProviders(<RunDetailPage />);
+
+    expect(screen.getByText('Execute remediation')).toBeInTheDocument();
+    expect(screen.getByText('Deny run')).toBeInTheDocument();
+    expect(screen.getByText('Download plan')).toBeInTheDocument();
+  });
+
+  test('disables execute and download until a plan is selected', () => {
+    mockHook(proposedView());
+    renderWithProviders(<RunDetailPage />);
+
+    const execute = screen.getByText('Execute remediation').closest('button') as HTMLButtonElement;
+    const download = screen.getByText('Download plan').closest('button') as HTMLButtonElement;
+    expect(execute).toHaveAttribute('aria-disabled', 'true');
+    expect(download).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  test('enables execution and opens the confirmation modal once a plan is selected', () => {
+    mockHook(proposedView());
+    renderWithProviders(<RunDetailPage />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Select plan 1' }));
+    fireEvent.click(screen.getByText('Execute remediation').closest('button') as HTMLButtonElement);
+
+    expect(screen.getByText('Execute remediation?')).toBeInTheDocument();
+  });
+
+  test('does not render the toolbar for advisory runs', () => {
+    mockHook(makeView({ advisory: true, options: [makeOption()], phase: 'Proposed' }));
+    renderWithProviders(<RunDetailPage />);
+
+    expect(screen.queryByText('Execute remediation')).not.toBeInTheDocument();
   });
 });

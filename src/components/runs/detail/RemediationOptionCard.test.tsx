@@ -21,7 +21,6 @@ type Props = Parameters<typeof RemediationOptionCard>[0];
 
 const renderCard = (props: Partial<Props> = {}) => {
   const handlers = {
-    onExecute: vi.fn(),
     onSelect: vi.fn(),
     onToggleExpand: vi.fn(),
   };
@@ -37,20 +36,8 @@ const renderCard = (props: Partial<Props> = {}) => {
   return handlers;
 };
 
-const originalUrlDescriptors = {
-  createObjectURL: Object.getOwnPropertyDescriptor(URL, 'createObjectURL'),
-  revokeObjectURL: Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL'),
-};
-
 afterEach(() => {
   vi.restoreAllMocks();
-  Object.entries(originalUrlDescriptors).forEach(([key, descriptor]) => {
-    if (descriptor) {
-      Object.defineProperty(URL, key, descriptor);
-      return;
-    }
-    Reflect.deleteProperty(URL, key);
-  });
 });
 
 describe('RemediationOptionCard', () => {
@@ -131,22 +118,8 @@ describe('RemediationOptionCard', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  test('calls onExecute when the execute button is clicked and the plan is selected', () => {
-    const { onExecute } = renderCard({ canApprove: true, isExpanded: true, isSelected: true });
-    fireEvent.click(screen.getByText('Execute remediation').closest('button') as HTMLButtonElement);
-    expect(onExecute).toHaveBeenCalledTimes(1);
-  });
-
-  test('disables the execute button until the plan is selected', () => {
-    const { onExecute } = renderCard({ canApprove: true, isExpanded: true, isSelected: false });
-    const button = screen.getByText('Execute remediation').closest('button') as HTMLButtonElement;
-    expect(button).toHaveAttribute('aria-disabled', 'true');
-    fireEvent.click(button);
-    expect(onExecute).not.toHaveBeenCalled();
-  });
-
-  test('does not render the execute button when onExecute is not provided', () => {
-    renderCard({ isExpanded: true, onExecute: undefined });
+  test('does not render an execute button (execution is triggered from the toolbar)', () => {
+    renderCard({ isExpanded: true, isSelected: true });
     expect(screen.queryByText('Execute remediation')).not.toBeInTheDocument();
   });
 
@@ -173,29 +146,13 @@ describe('RemediationOptionCard', () => {
     expect(screen.getByText(/Running/)).toBeInTheDocument();
   });
 
-  test('downloads the serialized plan with the expected blob and filename', async () => {
-    const createObjectURL = vi.fn().mockReturnValue('blob:fake');
-    const revokeObjectURL = vi.fn();
-    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
-    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
-    // jsdom does not implement anchor navigation; stub the click it triggers.
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-    // Capture the anchor the handler creates so we can assert its download name.
-    let downloadedAnchor: HTMLAnchorElement | undefined;
-    const realCreateElement = document.createElement.bind(document);
-    vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
-      const element = realCreateElement(tagName);
-      if (tagName === 'a') downloadedAnchor = element as HTMLAnchorElement;
-      return element;
-    });
-    renderCard({ isExpanded: true });
-    fireEvent.click(screen.getByText('Download plan').closest('button') as HTMLButtonElement);
+  test('renders a download button in read-only mode when expanded', () => {
+    renderCard({ isExpanded: true, readOnly: true });
+    expect(screen.getByText('Download plan')).toBeInTheDocument();
+  });
 
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
-    const blob = createObjectURL.mock.calls[0][0] as Blob;
-    expect(blob.type).toBe('application/json');
-    await expect(blob.text()).resolves.toBe(JSON.stringify(baseOption, null, 2));
-    expect(downloadedAnchor?.download).toBe('remediation-option-1.json');
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:fake');
+  test('does not render a download button in the selectable (non-read-only) card', () => {
+    renderCard({ isExpanded: true });
+    expect(screen.queryByText('Download plan')).not.toBeInTheDocument();
   });
 });
