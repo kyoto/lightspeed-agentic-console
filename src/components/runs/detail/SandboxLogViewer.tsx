@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSandboxLogStream } from '../../../hooks/useSandboxLogStream';
 import { SandboxView } from '../../../models/agenticrun-views';
+import './SandboxLogViewer.css';
 
 interface SandboxLogViewerProps {
   title: string;
@@ -106,22 +107,24 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
       }
     >
       {error && <Alert isInline isPlain title={error} variant="warning" />}
-      <LogViewer
-        data={
-          error
-            ? t('Failed to load logs.')
-            : loading && lines.length === 0
-              ? t('Loading logs...')
-              : logData || t('No logs available.')
-        }
-        footer={footer}
-        hasLineNumbers
-        height={400}
-        innerRef={logViewerRef}
-        isTextWrapped
-        onScroll={handleScroll}
-        toolbar={toolbar}
-      />
+      <div className="ols-plugin__sandbox-log-viewer">
+        <LogViewer
+          data={
+            error
+              ? t('Failed to load logs.')
+              : loading && lines.length === 0
+                ? t('Loading logs...')
+                : logData || t('No logs available.')
+          }
+          footer={footer}
+          hasLineNumbers
+          height={400}
+          innerRef={logViewerRef}
+          isTextWrapped
+          onScroll={handleScroll}
+          toolbar={toolbar}
+        />
+      </div>
     </ExpandableSection>
   );
 };
