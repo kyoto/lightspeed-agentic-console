@@ -5,8 +5,12 @@ import {
   Label,
   Toolbar,
   ToolbarContent,
+  ToolbarGroup,
   ToolbarItem,
+  Tooltip,
 } from '@patternfly/react-core';
+import RhUiDownloadIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-download-icon';
+import RhUiExternalLinkIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-external-link-icon';
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer';
 import type { FC } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { type OtelPhase, useRetainedLogs } from '../../../hooks/useRetainedLogs';
 import { useSandboxLogStream } from '../../../hooks/useSandboxLogStream';
 import { SandboxView } from '../../../models/agenticrun-views';
+import { buildPodLogUrl } from '../../../utils/agenticrun-utils';
 import { useRunUid } from '../RunUidContext';
 import './SandboxLogViewer.css';
 
@@ -86,12 +91,52 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
 
   const logData = useMemo(() => lines.join('\n'), [lines]);
 
+  // Unlike the viewer's own request, this omits sinceTime, follow and the tailLines cap. The
+  // sandbox pod is per stage, so its whole log is this stage's log.
+  const podLogUrl = useMemo(
+    () => buildPodLogUrl(sandbox.namespace, sandbox.podName, { timestamps: 'true' }),
+    [sandbox.namespace, sandbox.podName],
+  );
+
+  const downloadFilename = `${sandbox.podName.replace(/[^a-zA-Z0-9._-]/g, '_')}.log`;
+  // A failed fetch would otherwise offer a download of the API server's error body
+  const showLogActions = !useOtel && !retained.loading && !podLogs.error;
+
   const toolbar = (
     <Toolbar>
       <ToolbarContent>
         <ToolbarItem>
           <LogViewerSearch minSearchChars={2} placeholder={t('Search logs...')} />
         </ToolbarItem>
+        {showLogActions && (
+          <ToolbarGroup align={{ default: 'alignEnd' }} variant="action-group-plain">
+            <ToolbarItem>
+              <Tooltip aria="none" content={t('View raw logs')}>
+                <Button
+                  aria-label={t('View raw logs')}
+                  component="a"
+                  href={podLogUrl}
+                  icon={<RhUiExternalLinkIcon />}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  variant="plain"
+                />
+              </Tooltip>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Tooltip aria="none" content={t('Download')}>
+                <Button
+                  aria-label={t('Download')}
+                  component="a"
+                  download={downloadFilename}
+                  href={podLogUrl}
+                  icon={<RhUiDownloadIcon />}
+                  variant="plain"
+                />
+              </Tooltip>
+            </ToolbarItem>
+          </ToolbarGroup>
+        )}
       </ToolbarContent>
     </Toolbar>
   );
