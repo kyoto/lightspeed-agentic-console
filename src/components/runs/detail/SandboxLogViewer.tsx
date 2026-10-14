@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  type ButtonProps,
   ExpandableSection,
   Label,
   Toolbar,
@@ -19,6 +20,7 @@ import { type OtelPhase, useRetainedLogs } from '../../../hooks/useRetainedLogs'
 import { useSandboxLogStream } from '../../../hooks/useSandboxLogStream';
 import { SandboxView } from '../../../models/agenticrun-views';
 import { buildPodLogUrl } from '../../../utils/agenticrun-utils';
+import { createTextUrl, downloadText } from '../../../utils/download';
 import { useRunUid } from '../RunUidContext';
 import './SandboxLogViewer.css';
 
@@ -99,8 +101,40 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
   );
 
   const downloadFilename = `${sandbox.podName.replace(/[^a-zA-Z0-9._-]/g, '_')}.log`;
-  // A failed fetch would otherwise offer a download of the API server's error body
-  const showLogActions = !useOtel && !retained.loading && !podLogs.error;
+  // The useOtel flag already implies retained lines exist. Gate on the displayed error, not
+  // on podLogs.error alone, so the actions never sit over a failure message.
+  const showLogActions = useOtel || (!retained.loading && !error);
+
+  // One URL per logData, so repeated clicks don't each hold a copy of the logs. A noopener tab
+  // can't report when it has loaded, so the URL is only revoked once the logs change or the
+  // viewer unmounts.
+  const rawLogUrlRef = useRef<string>();
+  useEffect(
+    () => () => {
+      if (rawLogUrlRef.current) {
+        URL.revokeObjectURL(rawLogUrlRef.current);
+        rawLogUrlRef.current = undefined;
+      }
+    },
+    [logData],
+  );
+
+  const handleOpenRawOtelLogs = useCallback(() => {
+    rawLogUrlRef.current ??= createTextUrl(logData);
+    window.open(rawLogUrlRef.current, '_blank', 'noopener,noreferrer');
+  }, [logData]);
+
+  const handleDownloadOtelLogs = useCallback(
+    () => downloadText(logData, downloadFilename),
+    [downloadFilename, logData],
+  );
+
+  const rawLogsButtonProps: ButtonProps = useOtel
+    ? { onClick: handleOpenRawOtelLogs }
+    : { component: 'a', href: podLogUrl, rel: 'noopener noreferrer', target: '_blank' };
+  const downloadButtonProps: ButtonProps = useOtel
+    ? { onClick: handleDownloadOtelLogs }
+    : { component: 'a', download: downloadFilename, href: podLogUrl };
 
   const toolbar = (
     <Toolbar>
@@ -113,12 +147,9 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
             <ToolbarItem>
               <Tooltip aria="none" content={t('View raw logs')}>
                 <Button
+                  {...rawLogsButtonProps}
                   aria-label={t('View raw logs')}
-                  component="a"
-                  href={podLogUrl}
                   icon={<RhUiExternalLinkIcon />}
-                  rel="noopener noreferrer"
-                  target="_blank"
                   variant="plain"
                 />
               </Tooltip>
@@ -126,10 +157,8 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
             <ToolbarItem>
               <Tooltip aria="none" content={t('Download')}>
                 <Button
+                  {...downloadButtonProps}
                   aria-label={t('Download')}
-                  component="a"
-                  download={downloadFilename}
-                  href={podLogUrl}
                   icon={<RhUiDownloadIcon />}
                   variant="plain"
                 />

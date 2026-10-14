@@ -94,8 +94,10 @@ The core domain of the plugin: displaying and managing runs through a multi-stag
 ### Log Download and Raw View
 
 28g. Sandbox log viewers (streaming and non-streaming) show "View raw logs" and "Download" icon buttons, each with a matching tooltip, at the end of the log toolbar. The tooltips MUST NOT add a screen reader description, since each button's label already matches its tooltip, so screen readers announce each button once.
-28h. Both buttons use the sandbox pod's log endpoint with timestamps, covering the pod's entire log (no `sinceTime`, `follow`, or `tailLines`). Because the sandbox pod is per stage, its entire log is the stage's log. "View raw logs" opens the log in a new tab; "Download" saves it as a file.
-28i. The buttons are hidden while OTEL retained logs are displayed or still loading, and when pod log fetching fails.
+28h. Source selection follows the viewer's displayed source (28c):
+    - OTEL retained logs displayed: both buttons use the displayed retained log text. "View raw logs" opens it as plain text in a new tab; "Download" saves it as a file.
+    - Otherwise: both buttons use the sandbox pod's log endpoint with timestamps, covering the pod's entire log (no `sinceTime`, `follow`, or `tailLines`). Because the sandbox pod is per stage, its entire log is the stage's log. "View raw logs" opens the log in a new tab; "Download" saves it as a file.
+28i. When OTEL retained logs are displayed, the buttons are always shown. Otherwise they are hidden while OTEL retained logs are still loading and whenever the viewer displays an error, so the actions never sit over a failure message.
 28j. The downloaded file is named `<pod name>.log`, with every character outside `A-Z`, `a-z`, `0-9`, `.`, `_` and `-` replaced by `_`.
 
 ### Escalation
