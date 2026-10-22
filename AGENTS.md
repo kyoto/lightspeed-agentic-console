@@ -19,7 +19,7 @@ Scope is the React frontend only: it renders run state (from `AgenticRun` custom
 - react-i18next for internationalization
 - Vitest for unit tests, Playwright for e2e testing
 
-**Compatibility:** Requires OpenShift 4.22+
+**Compatibility:** Requires OpenShift 4.23+
 
 ## Architecture & Patterns
 

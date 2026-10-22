@@ -26,8 +26,8 @@
     "webpack": "webpack"
   },
   "dependencies": {
-    "@openshift-console/dynamic-plugin-sdk": "4.22.0",
-    "@openshift-console/dynamic-plugin-sdk-webpack": "4.22.0",
+    "@openshift-console/dynamic-plugin-sdk": "4.23.0",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "4.23.0",
     "@patternfly/react-component-groups": "6.5.0",
     "@patternfly/react-core": "6.6.0",
     "@patternfly/react-icons": "6.6.0",
@@ -42,7 +42,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-i18next": "16.5.8",
-    "react-router": "7.13.2",
+    "react-router": "7.18.4",
     "style-loader": "4.0.0",
     "ts-loader": "9.6.2",
     "typescript": "5.9.3",
@@ -88,7 +88,7 @@
       "RunListPage": "./components/runs/RunListPage"
     },
     "dependencies": {
-      "@console/pluginAPI": ">=4.22.0-0"
+      "@console/pluginAPI": ">=4.23.0-0"
     }
   }
 }

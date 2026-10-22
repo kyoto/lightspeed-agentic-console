@@ -55,6 +55,6 @@ Two tsconfig files exist:
 ## Implementation Notes
 
 - Changes to `console-extensions.json` require a full webpack restart — HMR does not pick up extension changes.
-- The plugin requires OpenShift 4.22+.
+- The plugin requires OpenShift 4.23+.
 - Dev server runs on port 9001 with CORS enabled for all origins, allowing the containerized console (port 9000) to load the plugin.
 - Production builds use content-hash filenames and deterministic chunk IDs for cache busting.
