@@ -59,7 +59,8 @@
         "prettier",
         "stylelint",
         "stylelint-*"
-      ]
+      ],
+      "schedule": ["* * * * 1,3,5"]
     },
     {
       "groupName": "patternfly",
@@ -67,7 +68,9 @@
     },
     {
       "groupName": "test",
-      "matchPackageNames": ["@playwright/*"]
+      "matchPackageNames": ["@playwright/*", "mcr.microsoft.com/playwright"],
+      "minimumReleaseAge": "14 days",
+      "schedule": ["* * * * 1,3,5"]
     }
   ]
 }
