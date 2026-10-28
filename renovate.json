@@ -53,12 +53,12 @@
     {
       "groupName": "lint",
       "matchPackageNames": [
-        "@typescript-eslint/*",
         "eslint",
         "eslint-*",
         "prettier",
         "stylelint",
-        "stylelint-*"
+        "stylelint-*",
+        "typescript-eslint"
       ],
       "schedule": ["* * * * 1,3,5"]
     },
