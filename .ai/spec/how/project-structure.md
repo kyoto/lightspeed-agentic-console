@@ -8,7 +8,8 @@
 | `src/utils/approval.ts` | `findStage`, `getStageStatus`, `stageNeedsApproval`, `buildApprovalPatch` | Pure functions for approval logic |
 | `src/utils/markdown.ts` | `renderMarkdown`, `renderMarkdownInline` | Low-level sanitized markdown rendering (marked + DOMPurify). `renderMarkdown` emits block HTML via `marked.parse`; `renderMarkdownInline` emits inline HTML via `marked.parseInline`. All links are hardened with `target="_blank" rel="noopener noreferrer"`. Prefer `MarkdownContent` component over direct calls. |
 | `src/utils/agenticrun-utils.ts` | `buildPodLogUrl`, `getOutcomeStatus`, `getReversibilityColor` | Helpers for pod log URLs, outcome status mapping, reversibility colors |
-| `src/utils/remediation-plan.ts` | `downloadRemediationOption` | Downloads a remediation option as a JSON file via programmatic anchor click |
+| `src/utils/download.ts` | `downloadBlob` | Saves a blob as a file via programmatic anchor click and revokes its object URL after a 1 second delay, since some browsers resolve the URL after the click returns |
+| `src/utils/remediation-plan.ts` | `downloadRemediationOption` | Downloads a remediation option as a JSON file via `downloadBlob` |
 | `src/utils/rbac-utils.ts` | `flattenRbacRules`, `resolveKind`, `isWriteVerb`, `hasWriteVerb`, `formatResource`, `summarizeWritePermissions`, `countNamespaceRules`, `countClusterRules`, `ScopedPermissionRule` | Flattens the grouped `namespaceScoped`/`clusterScoped` RBAC wire contract into one ordered rule list and derives write-verb summaries/counts for `RequiredPermissions` |
 | `src/components/runs/RunListPage.tsx` | `RunListPage` | Run list with virtualized table (conditional target-cluster, trigger-domain, phase, tokens, age, kebab columns), phase + trigger-domain filters, and per-row delete |
 | `src/components/runs/RunDetailPage.tsx` | `RunDetailPage` | Section-based run detail page with conditional target-cluster header badge and sticky action toolbar, delegates to `detail/` subcomponents |
@@ -36,6 +37,7 @@
 | `src/components/StatusGuard.tsx` | `StatusGuard` | Loading/error/empty gate using PatternFly `ErrorState`; replaces internal console `StatusBox` |
 | `src/models/agenticrun-views.ts` | `AgenticRunView`, `RemediationOptionView`, `ExecutionView`, `VerificationView`, `EscalationView`, `SandboxView`, `TimelineEvent`, `TERMINAL_PHASES` | View-model types for the detail page (output of `useAgenticRun` mapping layer) |
 | `src/constants.ts` | `RUN_NAMESPACE`, `RUN_LABEL_SOURCE`, `RESULT_LABEL_RUN` | Shared constants for K8s label keys and namespace |
+| `src/test-helpers.ts` | `cond`, `makeApproval`, `makeApprovalNoSpec`, `stubObjectUrl`, `stubAnchorDownload` | Shared unit test helpers: condition and approval CR factories, plus self-restoring stubs for `URL.createObjectURL`/`revokeObjectURL` and download anchor clicks (which also fakes `setTimeout`, so delayed revokes can't leak into later tests). Reuse these instead of re-stubbing in individual tests. |
 | `src/hooks/useAgenticRun.ts` | `useAgenticRun`, `mapRootCause`, `mapOption`, `mapExecution`, `mapVerification`, `mapEscalation`, `mapTimeline`, `filterLatest` | Fetches run + result CRs (including EscalationResult), maps API types → view types |
 | `src/hooks/useExecutionLogActions.ts` | `useExecutionLogActions` | Parses execution actions from sandbox pod logs |
 | `src/hooks/useRetainedLogs.ts` | `useRetainedLogs`, `probeConfigMap`, `buildServiceProxyBase` | Fetches retained logs from OTEL Admin API via K8s service proxy; probes ConfigMap for availability |
