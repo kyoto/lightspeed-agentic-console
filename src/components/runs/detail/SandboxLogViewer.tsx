@@ -1,12 +1,17 @@
 import {
   Alert,
   Button,
+  type ButtonProps,
   ExpandableSection,
   Label,
   Toolbar,
   ToolbarContent,
+  ToolbarGroup,
   ToolbarItem,
+  Tooltip,
 } from '@patternfly/react-core';
+import RhUiDownloadIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-download-icon';
+import RhUiExternalLinkIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-external-link-icon';
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer';
 import type { FC } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,6 +19,8 @@ import { useTranslation } from 'react-i18next';
 import { type OtelPhase, useRetainedLogs } from '../../../hooks/useRetainedLogs';
 import { useSandboxLogStream } from '../../../hooks/useSandboxLogStream';
 import { SandboxView } from '../../../models/agenticrun-views';
+import { buildPodLogUrl } from '../../../utils/agenticrun-utils';
+import { createTextUrl, downloadText } from '../../../utils/download';
 import { useRunUid } from '../RunUidContext';
 import './SandboxLogViewer.css';
 
@@ -86,12 +93,79 @@ export const SandboxLogViewer: FC<SandboxLogViewerProps> = ({
 
   const logData = useMemo(() => lines.join('\n'), [lines]);
 
+  // Unlike the viewer's own request, this omits sinceTime, follow and the tailLines cap. The
+  // sandbox pod is per stage, so its whole log is this stage's log.
+  const podLogUrl = useMemo(
+    () => buildPodLogUrl(sandbox.namespace, sandbox.podName, { timestamps: 'true' }),
+    [sandbox.namespace, sandbox.podName],
+  );
+
+  const downloadFilename = `${sandbox.podName.replace(/[^a-zA-Z0-9._-]/g, '_')}.log`;
+  // The useOtel flag already implies retained lines exist. Gate on the displayed error, not
+  // on podLogs.error alone, so the actions never sit over a failure message.
+  const showLogActions = useOtel || (!retained.loading && !error);
+
+  // One URL per logData, so repeated clicks don't each hold a copy of the logs. A noopener tab
+  // can't report when it has loaded, so the URL is only revoked once the logs change or the
+  // viewer unmounts.
+  const rawLogUrlRef = useRef<string>();
+  useEffect(
+    () => () => {
+      if (rawLogUrlRef.current) {
+        URL.revokeObjectURL(rawLogUrlRef.current);
+        rawLogUrlRef.current = undefined;
+      }
+    },
+    [logData],
+  );
+
+  const handleOpenRawOtelLogs = useCallback(() => {
+    rawLogUrlRef.current ??= createTextUrl(logData);
+    window.open(rawLogUrlRef.current, '_blank', 'noopener,noreferrer');
+  }, [logData]);
+
+  const handleDownloadOtelLogs = useCallback(
+    () => downloadText(logData, downloadFilename),
+    [downloadFilename, logData],
+  );
+
+  const rawLogsButtonProps: ButtonProps = useOtel
+    ? { onClick: handleOpenRawOtelLogs }
+    : { component: 'a', href: podLogUrl, rel: 'noopener noreferrer', target: '_blank' };
+  const downloadButtonProps: ButtonProps = useOtel
+    ? { onClick: handleDownloadOtelLogs }
+    : { component: 'a', download: downloadFilename, href: podLogUrl };
+
   const toolbar = (
     <Toolbar>
       <ToolbarContent>
         <ToolbarItem>
           <LogViewerSearch minSearchChars={2} placeholder={t('Search logs...')} />
         </ToolbarItem>
+        {showLogActions && (
+          <ToolbarGroup align={{ default: 'alignEnd' }} variant="action-group-plain">
+            <ToolbarItem>
+              <Tooltip aria="none" content={t('View raw logs')}>
+                <Button
+                  {...rawLogsButtonProps}
+                  aria-label={t('View raw logs')}
+                  icon={<RhUiExternalLinkIcon />}
+                  variant="plain"
+                />
+              </Tooltip>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Tooltip aria="none" content={t('Download')}>
+                <Button
+                  {...downloadButtonProps}
+                  aria-label={t('Download')}
+                  icon={<RhUiDownloadIcon />}
+                  variant="plain"
+                />
+              </Tooltip>
+            </ToolbarItem>
+          </ToolbarGroup>
+        )}
       </ToolbarContent>
     </Toolbar>
   );

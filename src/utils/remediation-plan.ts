@@ -1,11 +1,8 @@
 import { RemediationOptionView } from '../models/agenticrun-views';
+import { downloadBlob } from './download';
 
-export const downloadRemediationOption = (option: RemediationOptionView): void => {
-  const blob = new Blob([JSON.stringify(option, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `remediation-option-${option.index + 1}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-};
+export const downloadRemediationOption = (option: RemediationOptionView): void =>
+  downloadBlob(
+    new Blob([JSON.stringify(option, null, 2)], { type: 'application/json' }),
+    `remediation-option-${option.index + 1}.json`,
+  );
