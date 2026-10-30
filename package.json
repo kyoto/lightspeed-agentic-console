@@ -72,10 +72,6 @@
     "vitest": "4.1.12",
     "webpack-dev-server": "6.0.0"
   },
-  "overrides": {
-    "browserslist": "4.29.3",
-    "js-yaml": "4.3.2"
-  },
   "consolePlugin": {
     "name": "lightspeed-agentic-console-plugin",
     "version": "0.0.1",
