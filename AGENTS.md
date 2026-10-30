@@ -12,6 +12,10 @@ This is the **OpenShift Lightspeed Agentic Console Plugin** — an OpenShift Con
 
 Scope is the React frontend only: it renders run state (from `AgenticRun` custom resources) and sends approval/denial patches. Out of scope: the lightspeed-agentic-operator (reconciles runs), the agentic-sandbox (executes agent workloads), CRD definitions, and backend API logic.
 
+**Sister repo:** References to the "sister repo" mean
+[openshift/lightspeed-console](https://github.com/openshift/lightspeed-console), the OpenShift
+Lightspeed console plugin.
+
 **Key Technologies:**
 - TypeScript + React 18
 - PatternFly 6 (UI component library)
